@@ -1,0 +1,21 @@
+[project]
+name = "voice2erp"
+version = "0.1.0"
+description = "Voice-first Business Central sales assistant"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
