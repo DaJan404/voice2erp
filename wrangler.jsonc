@@ -1,0 +1,10 @@
+{
+    "name": "voice2erp",
+    "main": "src/voice2erp/main.py",
+    "compatibility_date": "2026-09-03",
+    "compatibility_flags": [
+        "python_workers"
+    ],
+    "workers_dev": true,
+    "preview_urls": false
+}
