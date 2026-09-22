@@ -4,6 +4,11 @@ from urllib.parse import ParseResult, parse_qs, urlparse
 
 from workers import Response, WorkerEntrypoint
 
+from voice2erp.business_central.client import (
+    BusinessCentralClient,
+    BusinessCentralConfig,
+    BusinessCentralError,
+)
 from voice2erp.security import validate_tool_token
 
 
@@ -92,6 +97,17 @@ class Default(WorkerEntrypoint):
         if url.path == "/api/customers/briefing":
             return await self.get_customer_briefing(request, url)
 
+        if url.path.startswith("/api/debug/bc/customer/"):
+            customer_number = url.path.removeprefix("/api/debug/bc/customer/").strip()
+
+            if not customer_number:
+                return json_response(
+                    {"detail": "Missing customer number"},
+                    status=400,
+                )
+
+            return await self.get_bc_customer_debug(request, customer_number)
+
         return json_response(
             {"detail": "Not Found"},
             status=404,
@@ -174,4 +190,88 @@ class Default(WorkerEntrypoint):
                     "last_order": customer["last_order"],
                 },
             }
+        )
+
+    async def get_bc_customer_debug(
+        self,
+        request: RequestLike,
+        customer_number: str,
+    ) -> Response:
+        expected_token = cast(
+            str | None,
+            getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
+        )
+
+        provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
+
+        auth_error = validate_tool_token(
+            expected_token,
+            provided_token,
+        )
+
+        if auth_error is not None:
+            detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
+
+            return json_response(
+                {"detail": detail},
+                status=auth_error,
+            )
+
+        if not customer_number:
+            return json_response(
+                {"detail": "Missing customer number"},
+                status=400,
+            )
+
+        try:
+            client = self._business_central_client()
+            customer = await client.get_customer(customer_number)
+        except BusinessCentralError as exc:
+            print(f"Business Central error: {exc}")
+
+            return json_response(
+                {
+                    "status": "error",
+                    "detail": "Business Central request failed",
+                },
+                status=502,
+            )
+
+        if customer is None:
+            return json_response(
+                {
+                    "status": "not_found",
+                    "customer_number": customer_number,
+                },
+                status=404,
+            )
+
+        return json_response(
+            {
+                "status": "found",
+                "source": "business_central",
+                "customer": customer,
+            }
+        )
+
+    def _require_env(self, name: str) -> str:
+        value = cast(
+            str | None,
+            getattr(self.env, name, None),
+        )
+
+        if not isinstance(value, str) or not value.strip():
+            raise BusinessCentralError(f"Missing Business Central configuration: {name}")
+
+        return value
+
+    def _business_central_client(self) -> BusinessCentralClient:
+        return BusinessCentralClient(
+            BusinessCentralConfig(
+                tenant_id=self._require_env("BC_TENANT_ID"),
+                client_id=self._require_env("BC_CLIENT_ID"),
+                client_secret=self._require_env("BC_CLIENT_SECRET"),
+                environment=self._require_env("BC_ENVIRONMENT"),
+                company_id=self._require_env("BC_COMPANY_ID"),
+            )
         )

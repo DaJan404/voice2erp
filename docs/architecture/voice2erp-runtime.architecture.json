@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VOICE2ERP Runtime Architecture",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "current-request",
+        "label": "Current request path",
+        "focus": ["salesperson", "voice-agent", "http-tool", "worker", "demo-data"],
+        "note": "Follow a spoken customer question through AssemblyAI to the current demo-backed Worker response."
+      },
+      {
+        "id": "planned-erp",
+        "label": "Planned ERP integration",
+        "focus": ["worker", "entra-id", "business-central"],
+        "note": "Future OAuth client-credential flow from VOICE2ERP to Business Central."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [60, 60],
+    "cols": 5,
+    "gapX": 88,
+    "gapY": 118,
+    "cellW": 172,
+    "cellH": 78
+  },
+  "components": [
+    {
+      "id": "salesperson",
+      "type": "external",
+      "label": "Salesperson",
+      "sublabel": "Voice user",
+      "tag": "CURRENT",
+      "row": 1,
+      "col": 0,
+      "size": [150, 72]
+    },
+    {
+      "id": "voice-agent",
+      "type": "frontend",
+      "label": "AssemblyAI Voice Agent",
+      "sublabel": "Conversation + spoken reply",
+      "tag": "CURRENT · VOICE LAYER",
+      "row": 1,
+      "col": 1,
+      "size": [190, 72]
+    },
+    {
+      "id": "http-tool",
+      "type": "cloud",
+      "label": "AssemblyAI HTTP Tool",
+      "sublabel": "get_customer_briefing",
+      "tag": "CURRENT",
+      "row": 1,
+      "col": 2,
+      "size": [180, 72]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "VOICE2ERP Worker",
+      "sublabel": "Cloudflare Python Worker",
+      "tag": "CURRENT · ERP LAYER",
+      "brand": "cloudflare",
+      "row": 1,
+      "col": 3,
+      "size": [190, 72]
+    },
+    {
+      "id": "demo-data",
+      "type": "database",
+      "label": "Demo Customer Data",
+      "sublabel": "In-memory sample records",
+      "tag": "CURRENT · DEMO ONLY",
+      "row": 1,
+      "col": 4,
+      "size": [190, 72]
+    },
+    {
+      "id": "entra-id",
+      "type": "security",
+      "label": "Microsoft Entra ID",
+      "sublabel": "OAuth token issuer",
+      "tag": "PLANNED",
+      "row": 2,
+      "col": 3,
+      "size": [180, 72]
+    },
+    {
+      "id": "business-central",
+      "type": "external",
+      "label": "Business Central REST API",
+      "sublabel": "Live ERP data",
+      "tag": "PLANNED",
+      "row": 2,
+      "col": 4,
+      "size": [210, 72]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "CURRENT · ASSEMBLYAI VOICE-AGENT LAYER",
+      "wraps": ["voice-agent", "http-tool"],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "CURRENT · VOICE2ERP ERP-INTEGRATION LAYER",
+      "wraps": ["worker", "demo-data"],
+      "pad": 30
+    },
+    {
+      "kind": "security-group",
+      "label": "TRUST BOUNDARY · X-VOICE2ERP-TOKEN",
+      "wraps": ["worker"],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "PLANNED · MICROSOFT CLOUD",
+      "wraps": ["entra-id", "business-central"],
+      "pad": 30
+    }
+  ],
+  "connections": [
+    {
+      "id": "voice-request",
+      "from": "salesperson",
+      "to": "voice-agent",
+      "label": "Voice ↔ speech",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tool-invocation",
+      "from": "voice-agent",
+      "to": "http-tool",
+      "label": "Tool call ↔ result",
+      "variant": "emphasis",
+      "labelDy": 60
+    },
+    {
+      "id": "authenticated-request",
+      "from": "http-tool",
+      "to": "worker",
+      "label": "HTTPS",
+      "variant": "security"
+    },
+    {
+      "id": "demo-lookup",
+      "from": "worker",
+      "to": "demo-data",
+      "label": "Demo lookup",
+      "variant": "emphasis"
+    },
+    {
+      "id": "oauth-request",
+      "from": "worker",
+      "to": "entra-id",
+      "label": "OAuth client credentials",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "future-erp-read",
+      "from": "worker",
+      "to": "business-central",
+      "label": "REST API + bearer token",
+      "variant": "dashed"
+    }
+  ]
+}
