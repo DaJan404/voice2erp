@@ -1,9 +1,19 @@
-from typing import TypedDict, cast
-from urllib.parse import parse_qs, urlparse
+import json
+from typing import Protocol, TypedDict, cast
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 from workers import Response, WorkerEntrypoint
 
 from voice2erp.security import validate_tool_token
+
+
+class HeadersLike(Protocol):
+    def get(self, name: str) -> str | None: ...
+
+
+class RequestLike(Protocol):
+    url: str
+    headers: HeadersLike
 
 
 class LastOrder(TypedDict):
@@ -49,40 +59,56 @@ CUSTOMERS: list[Customer] = [
 ]
 
 
+def json_response(
+    payload: object,
+    *,
+    status: int = 200,
+) -> Response:
+    return Response(
+        json.dumps(payload),
+        status=status,
+        headers={"content-type": "application/json"},
+    )
+
+
 def search_customers(query: str) -> list[Customer]:
-    query = query.strip().lower()
+    normalized_query = query.strip().lower()
 
     return [
         customer
         for customer in CUSTOMERS
-        if query in customer["name"].lower() or query == customer["number"].lower()
+        if normalized_query in customer["name"].lower()
+        or normalized_query == customer["number"].lower()
     ]
 
 
 class Default(WorkerEntrypoint):
-    async def fetch(self, request):
-        url = urlparse(request.url)
+    async def fetch(self, request: RequestLike) -> Response:
+        url: ParseResult = urlparse(request.url)
 
         if url.path == "/health":
-            return Response.json({"status": "ok"})
+            return json_response({"status": "ok"})
 
         if url.path == "/api/customers/briefing":
             return await self.get_customer_briefing(request, url)
 
-        return Response.json(
+        return json_response(
             {"detail": "Not Found"},
             status=404,
         )
 
-    async def get_customer_briefing(self, request, url):
+    async def get_customer_briefing(
+        self,
+        request: RequestLike,
+        url: ParseResult,
+    ) -> Response:
         expected_token = cast(
             str | None,
             getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
         )
-        provided_token = cast(
-            str | None,
-            request.headers.get("X-VOICE2ERP-TOKEN"),
-        )
+
+        provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
+
         auth_error = validate_tool_token(
             expected_token,
             provided_token,
@@ -91,16 +117,16 @@ class Default(WorkerEntrypoint):
         if auth_error is not None:
             detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
 
-            return Response.json(
+            return json_response(
                 {"detail": detail},
                 status=auth_error,
             )
 
-        params = parse_qs(url.query)
+        params: dict[str, list[str]] = parse_qs(url.query)
         query = params.get("query", [""])[0].strip()
 
         if not query:
-            return Response.json(
+            return json_response(
                 {"detail": "Missing customer query"},
                 status=400,
             )
@@ -108,7 +134,7 @@ class Default(WorkerEntrypoint):
         matches = search_customers(query)
 
         if len(matches) == 0:
-            return Response.json(
+            return json_response(
                 {
                     "status": "not_found",
                     "query": query,
@@ -116,7 +142,7 @@ class Default(WorkerEntrypoint):
             )
 
         if len(matches) > 1:
-            return Response.json(
+            return json_response(
                 {
                     "status": "ambiguous",
                     "query": query,
@@ -133,7 +159,7 @@ class Default(WorkerEntrypoint):
 
         customer = matches[0]
 
-        return Response.json(
+        return json_response(
             {
                 "status": "found",
                 "query": query,
