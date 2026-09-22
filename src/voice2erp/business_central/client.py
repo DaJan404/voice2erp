@@ -180,12 +180,14 @@ class BusinessCentralClient:
         if exact_customer is not None:
             return [exact_customer]
 
+        normalized_query = normalized_query.lower()
         safe_query = self._odata_string(normalized_query)
 
         payload = await self._get(
             "customers",
             {
-                "$filter": f"contains(displayName,'{safe_query}')",
+                "$filter": (f"contains(tolower(displayName),'{safe_query}')"),
+                "$schemaversion": "2.1",
                 "$top": "10",
             },
         )
