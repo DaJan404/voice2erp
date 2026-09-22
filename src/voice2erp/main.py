@@ -1,3 +1,4 @@
+from typing import TypedDict, cast
 from urllib.parse import parse_qs, urlparse
 
 from workers import Response, WorkerEntrypoint
@@ -5,7 +6,22 @@ from workers import Response, WorkerEntrypoint
 from voice2erp.security import validate_tool_token
 
 
-CUSTOMERS = [
+class LastOrder(TypedDict):
+    number: str
+    date: str
+    amount: float
+
+
+class Customer(TypedDict):
+    number: str
+    name: str
+    city: str
+    open_orders: int
+    open_quotes: int
+    last_order: LastOrder
+
+
+CUSTOMERS: list[Customer] = [
     {
         "number": "10000",
         "name": "The Cannon Group",
@@ -33,14 +49,13 @@ CUSTOMERS = [
 ]
 
 
-def search_customers(query: str):
+def search_customers(query: str) -> list[Customer]:
     query = query.strip().lower()
 
     return [
         customer
         for customer in CUSTOMERS
-        if query in customer["name"].lower()
-        or query == customer["number"].lower()
+        if query in customer["name"].lower() or query == customer["number"].lower()
     ]
 
 
@@ -60,20 +75,21 @@ class Default(WorkerEntrypoint):
         )
 
     async def get_customer_briefing(self, request, url):
-        expected_token = getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None)
-        provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
-
+        expected_token = cast(
+            str | None,
+            getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
+        )
+        provided_token = cast(
+            str | None,
+            request.headers.get("X-VOICE2ERP-TOKEN"),
+        )
         auth_error = validate_tool_token(
             expected_token,
             provided_token,
         )
 
         if auth_error is not None:
-            detail = (
-                "Service unavailable"
-                if auth_error == 503
-                else "Unauthorized"
-            )
+            detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
 
             return Response.json(
                 {"detail": detail},
