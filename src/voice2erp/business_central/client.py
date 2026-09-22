@@ -166,6 +166,37 @@ class BusinessCentralClient:
 
         return cast(Customer, values[0])
 
+    async def search_customers(
+        self,
+        query: str,
+    ) -> list[Customer]:
+        normalized_query = query.strip()
+
+        if not normalized_query:
+            return []
+
+        exact_customer = await self.get_customer(normalized_query)
+
+        if exact_customer is not None:
+            return [exact_customer]
+
+        safe_query = self._odata_string(normalized_query)
+
+        payload = await self._get(
+            "customers",
+            {
+                "$filter": f"contains(displayName,'{safe_query}')",
+                "$top": "10",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list):
+            return []
+
+        return cast(list[Customer], values)
+
     async def get_sales_orders(
         self,
         customer_number: str,

@@ -1,9 +1,10 @@
 import json
-from typing import Protocol, TypedDict, cast
+from typing import Protocol, cast
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from workers import Response, WorkerEntrypoint
 
+from voice2erp.briefing.service import BriefingService
 from voice2erp.business_central.client import (
     BusinessCentralClient,
     BusinessCentralConfig,
@@ -21,49 +22,6 @@ class RequestLike(Protocol):
     headers: HeadersLike
 
 
-class LastOrder(TypedDict):
-    number: str
-    date: str
-    amount: float
-
-
-class Customer(TypedDict):
-    number: str
-    name: str
-    city: str
-    open_orders: int
-    open_quotes: int
-    last_order: LastOrder
-
-
-CUSTOMERS: list[Customer] = [
-    {
-        "number": "10000",
-        "name": "The Cannon Group",
-        "city": "Atlanta",
-        "open_orders": 2,
-        "open_quotes": 1,
-        "last_order": {
-            "number": "SO-1042",
-            "date": "2026-08-27",
-            "amount": 4850.00,
-        },
-    },
-    {
-        "number": "20000",
-        "name": "Contoso Ltd.",
-        "city": "London",
-        "open_orders": 1,
-        "open_quotes": 0,
-        "last_order": {
-            "number": "SO-1051",
-            "date": "2026-08-30",
-            "amount": 2150.00,
-        },
-    },
-]
-
-
 def json_response(
     payload: object,
     *,
@@ -74,17 +32,6 @@ def json_response(
         status=status,
         headers={"content-type": "application/json"},
     )
-
-
-def search_customers(query: str) -> list[Customer]:
-    normalized_query = query.strip().lower()
-
-    return [
-        customer
-        for customer in CUSTOMERS
-        if normalized_query in customer["name"].lower()
-        or normalized_query == customer["number"].lower()
-    ]
 
 
 class Default(WorkerEntrypoint):
@@ -106,7 +53,10 @@ class Default(WorkerEntrypoint):
                     status=400,
                 )
 
-            return await self.get_bc_customer_debug(request, customer_number)
+            return await self.get_bc_customer_debug(
+                request,
+                customer_number,
+            )
 
         return json_response(
             {"detail": "Not Found"},
@@ -147,50 +97,24 @@ class Default(WorkerEntrypoint):
                 status=400,
             )
 
-        matches = search_customers(query)
+        try:
+            client = self._business_central_client()
+            service = BriefingService(client)
 
-        if len(matches) == 0:
+            result = await service.get_customer_briefing(query)
+
+        except BusinessCentralError as exc:
+            print(f"Business Central error: {exc}")
+
             return json_response(
                 {
-                    "status": "not_found",
-                    "query": query,
-                }
+                    "status": "error",
+                    "detail": "Business Central request failed",
+                },
+                status=502,
             )
 
-        if len(matches) > 1:
-            return json_response(
-                {
-                    "status": "ambiguous",
-                    "query": query,
-                    "customers": [
-                        {
-                            "number": customer["number"],
-                            "name": customer["name"],
-                            "city": customer["city"],
-                        }
-                        for customer in matches
-                    ],
-                }
-            )
-
-        customer = matches[0]
-
-        return json_response(
-            {
-                "status": "found",
-                "query": query,
-                "customer": {
-                    "number": customer["number"],
-                    "name": customer["name"],
-                    "city": customer["city"],
-                },
-                "sales": {
-                    "open_orders": customer["open_orders"],
-                    "open_quotes": customer["open_quotes"],
-                    "last_order": customer["last_order"],
-                },
-            }
-        )
+        return json_response(result)
 
     async def get_bc_customer_debug(
         self,
@@ -217,15 +141,10 @@ class Default(WorkerEntrypoint):
                 status=auth_error,
             )
 
-        if not customer_number:
-            return json_response(
-                {"detail": "Missing customer number"},
-                status=400,
-            )
-
         try:
             client = self._business_central_client()
             customer = await client.get_customer(customer_number)
+
         except BusinessCentralError as exc:
             print(f"Business Central error: {exc}")
 
@@ -265,7 +184,9 @@ class Default(WorkerEntrypoint):
 
         return value
 
-    def _business_central_client(self) -> BusinessCentralClient:
+    def _business_central_client(
+        self,
+    ) -> BusinessCentralClient:
         return BusinessCentralClient(
             BusinessCentralConfig(
                 tenant_id=self._require_env("BC_TENANT_ID"),
