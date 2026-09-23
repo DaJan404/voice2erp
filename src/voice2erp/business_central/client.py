@@ -9,6 +9,8 @@ from workers import fetch
 
 from voice2erp.business_central.models import (
     Customer,
+    CustomerContact,
+    SalesInvoice,
     SalesOrder,
     SalesOrderLine,
     SalesQuote,
@@ -166,6 +168,17 @@ class BusinessCentralClient:
 
         return cast(Customer, values[0])
 
+    async def get_customer_by_id(
+        self,
+        customer_id: str,
+    ) -> Customer | None:
+        payload = await self._get(f"customers({customer_id})")
+
+        if not payload.get("id"):
+            return None
+
+        return cast(Customer, payload)
+
     async def search_customers(
         self,
         query: str,
@@ -198,6 +211,71 @@ class BusinessCentralClient:
             return []
 
         return cast(list[Customer], values)
+
+    async def search_customer_contacts(
+        self,
+        query: str,
+    ) -> list[CustomerContact]:
+        normalized_query = " ".join(query.lower().split())
+
+        if not normalized_query:
+            return []
+
+        terms = normalized_query.split()
+        primary_term = self._odata_string(terms[0])
+
+        payload = await self._get(
+            "customerContacts",
+            {
+                "$filter": (
+                    f"contains(tolower(firstName),'{primary_term}') or "
+                    f"contains(tolower(lastName),'{primary_term}') or "
+                    f"contains(tolower(customerName),'{primary_term}')"
+                ),
+                "$schemaversion": "2.1",
+                "$top": "100",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list):
+            return []
+
+        contacts = cast(list[CustomerContact], values)
+
+        def searchable_text(contact: CustomerContact) -> str:
+            return " ".join(
+                (
+                    contact.get("firstName", ""),
+                    contact.get("lastName", ""),
+                    contact.get("customerName", ""),
+                    contact.get("email", ""),
+                )
+            ).lower()
+
+        exact_matches = [
+            contact
+            for contact in contacts
+            if " ".join(
+                (
+                    contact.get("firstName", ""),
+                    contact.get("lastName", ""),
+                )
+            )
+            .strip()
+            .lower()
+            == normalized_query
+        ]
+
+        if exact_matches:
+            return exact_matches
+
+        return [
+            contact
+            for contact in contacts
+            if all(term in searchable_text(contact) for term in terms)
+        ]
 
     async def get_sales_orders(
         self,
@@ -238,6 +316,27 @@ class BusinessCentralClient:
             return []
 
         return cast(list[SalesQuote], values)
+
+    async def get_sales_invoices(
+        self,
+        customer_number: str,
+    ) -> list[SalesInvoice]:
+        safe_number = self._odata_string(customer_number)
+
+        payload = await self._get(
+            "salesInvoices",
+            {
+                "$filter": f"customerNumber eq '{safe_number}'",
+                "$top": "100",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list):
+            return []
+
+        return cast(list[SalesInvoice], values)
 
     async def get_sales_order_lines(
         self,
