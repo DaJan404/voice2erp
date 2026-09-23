@@ -28,16 +28,18 @@ type LargestOrder = OrderSummary & {
   }>;
 };
 
+type VerificationMetadata = {
+  source: string;
+  source_name: string;
+  environment: string;
+  company_id: string;
+  retrieved_at: string;
+  fresh: boolean;
+};
+
 type VerificationResponse = {
   status: "verified";
-  verification: {
-    source: string;
-    source_name: string;
-    environment: string;
-    company_id: string;
-    retrieved_at: string;
-    fresh: boolean;
-  };
+  verification: VerificationMetadata;
   briefing: {
     source: string;
     customer: {
@@ -62,6 +64,35 @@ type VerificationResponse = {
   };
 };
 
+type AmbiguousVerificationResponse = {
+  status: "ambiguous";
+  verification: VerificationMetadata;
+  query: string;
+  customers: Array<{
+    number: string;
+    name: string;
+    city: string;
+  }>;
+};
+
+type NotFoundVerificationResponse = {
+  status: "not_found";
+  verification: VerificationMetadata;
+  query: string;
+};
+
+type VerificationLookupResult =
+  | AmbiguousVerificationResponse
+  | NotFoundVerificationResponse;
+
+type HistoryEntry = {
+  id: number;
+  kind: "user" | "agent" | "tool" | "verification";
+  label: string;
+  text: string;
+  at: string;
+};
+
 function money(value: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -79,6 +110,30 @@ function isVerificationResponse(
   }
 
   return "status" in value && value.status === "verified";
+}
+
+function isAmbiguousVerificationResponse(
+  value: unknown,
+): value is AmbiguousVerificationResponse {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "status" in value &&
+      value.status === "ambiguous" &&
+      "customers" in value &&
+      Array.isArray(value.customers),
+  );
+}
+
+function isNotFoundVerificationResponse(
+  value: unknown,
+): value is NotFoundVerificationResponse {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "status" in value &&
+      value.status === "not_found",
+  );
 }
 
 function extractToolQuery(args: unknown): string | null {
@@ -136,6 +191,7 @@ const VOICE_LABELS: Record<
 
 export default function Home() {
   const voiceSessionRef = useRef<VoiceAgentSession | null>(null);
+  const historyCounterRef = useRef(0);
 
   const [verification, setVerification] =
     useState<VerificationResponse | null>(null);
@@ -148,6 +204,11 @@ export default function Home() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [userTranscript, setUserTranscript] = useState("");
   const [agentTranscript, setAgentTranscript] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [lookupResult, setLookupResult] =
+    useState<VerificationLookupResult | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [copyStatus, setCopyStatus] = useState("");
 
   useEffect(() => {
     return () => {
@@ -167,22 +228,111 @@ export default function Home() {
     window.localStorage.setItem("voice2erp-theme", nextTheme);
   }
 
+  function addHistory(
+    kind: HistoryEntry["kind"],
+    label: string,
+    text: string,
+  ) {
+    const entry: HistoryEntry = {
+      id: ++historyCounterRef.current,
+      kind,
+      label,
+      text,
+      at: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+    };
+
+    setHistory((current) => [...current.slice(-39), entry]);
+    setCopyStatus("");
+  }
+
+  async function copyText(text: string, successLabel = "Copied") {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus(successLabel);
+    } catch {
+      setCopyStatus("Copy failed");
+    }
+  }
+
+  async function copySession() {
+    const text = history
+      .map(
+        (entry) =>
+          entry.at + " · " + entry.label + "\n" + entry.text,
+      )
+      .join("\n\n");
+
+    await copyText(text, "Session copied");
+  }
+
   async function verifyLive(query = "10000") {
+    const normalizedQuery = query.trim();
+
+    if (!normalizedQuery) {
+      setVerificationError("Enter a customer name or number.");
+      return;
+    }
+
     setVerificationLoading(true);
     setVerificationError(null);
 
     try {
       const response = await fetch(
-        "/api/verify/customer?query=" + encodeURIComponent(query),
+        "/api/verify/customer?query=" +
+          encodeURIComponent(normalizedQuery),
         { cache: "no-store" },
       );
       const data: unknown = await response.json();
 
-      if (!response.ok || !isVerificationResponse(data)) {
-        throw new Error("Live verification failed. Please try again.");
+      if (isVerificationResponse(data)) {
+        setVerification(data);
+        setLookupResult(null);
+        setCustomerQuery(data.briefing.customer.number);
+        addHistory(
+          "verification",
+          "Business Central",
+          "Verified " +
+            data.briefing.customer.name +
+            " (" +
+            data.briefing.customer.number +
+            ") from live Business Central data.",
+        );
+        return;
       }
 
-      setVerification(data);
+      if (isAmbiguousVerificationResponse(data)) {
+        setVerification(null);
+        setLookupResult(data);
+        addHistory(
+          "verification",
+          "Business Central lookup",
+          "Multiple customer records matched \"" +
+            normalizedQuery +
+            "\".",
+        );
+        return;
+      }
+
+      if (isNotFoundVerificationResponse(data)) {
+        setVerification(null);
+        setLookupResult(data);
+        addHistory(
+          "verification",
+          "Business Central lookup",
+          "No customer matched \"" + normalizedQuery + "\".",
+        );
+        return;
+      }
+
+      throw new Error(
+        response.ok
+          ? "Live verification returned an unexpected response."
+          : "Live verification failed. Please try again.",
+      );
     } catch (caught) {
       setVerificationError(
         caught instanceof Error
@@ -221,20 +371,40 @@ export default function Home() {
           voiceSessionRef.current = null;
         }
       },
-      onTranscript: (speaker, text) => {
+      onTranscript: (speaker, text, isFinal) => {
         if (speaker === "user") {
           setUserTranscript(text);
         } else {
           setAgentTranscript(text);
         }
+
+        if (isFinal) {
+          addHistory(
+            speaker,
+            speaker === "user" ? "You" : "VOICE2ERP",
+            text,
+          );
+        }
       },
       onToolCall: (name, args) => {
+        const serializedArgs =
+          typeof args === "string"
+            ? args
+            : JSON.stringify(args ?? {});
+
+        addHistory(
+          "tool",
+          "ERP tool",
+          name + "(" + serializedArgs + ")",
+        );
+
         if (name !== "get_customer_briefing") {
           return;
         }
 
         const query = extractToolQuery(args);
         if (query) {
+          setCustomerQuery(query);
           void verifyLive(query);
         }
       },
@@ -302,7 +472,8 @@ export default function Home() {
         ? "End voice session"
         : "Start voice session";
 
-  const currentVerifyQuery = customer?.number ?? "10000";
+  const currentVerifyQuery =
+    customer?.number || customerQuery || "10000";
 
   return (
     <div className="app-shell">
@@ -471,33 +642,90 @@ export default function Home() {
             </div>
           </div>
 
-          {!verification ? (
-            <div className="evidence-empty">
-              <div
-                className="evidence-empty-rule"
-                aria-hidden="true"
+          <form
+            className="customer-lookup"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void verifyLive(customerQuery);
+            }}
+          >
+            <label htmlFor="customer-query">Customer lookup</label>
+            <div>
+              <input
+                id="customer-query"
+                name="customerQuery"
+                type="search"
+                value={customerQuery}
+                onChange={(event) =>
+                  setCustomerQuery(event.target.value)
+                }
+                placeholder="Name or customer number"
+                autoComplete="off"
               />
-              <p>
-                The AI response is not the proof. This view performs a
-                separate, uncached Business Central request and displays
-                the result as source evidence.
-              </p>
               <button
-                className="secondary-action"
-                type="button"
-                onClick={() => void verifyLive("10000")}
-                disabled={verificationLoading}
+                type="submit"
+                disabled={
+                  verificationLoading || !customerQuery.trim()
+                }
               >
-                {verificationLoading
-                  ? "Checking Business Central"
-                  : "Run live verification"}
+                {verificationLoading ? "Checking" : "Verify customer"}
               </button>
-              {verificationError && (
-                <p className="error-message" role="alert">
-                  {verificationError}
-                </p>
-              )}
             </div>
+          </form>
+
+          {!verification ? (
+            lookupResult?.status === "ambiguous" ? (
+              <div className="lookup-resolution reveal">
+                <p className="section-kicker">Choose exact record</p>
+                <h3>Multiple customers matched</h3>
+                <p>
+                  Select the Business Central record you want to verify.
+                </p>
+                <ul>
+                  {lookupResult.customers.map((match) => (
+                    <li key={match.number}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerQuery(match.number);
+                          void verifyLive(match.number);
+                        }}
+                      >
+                        <span>
+                          <strong>{match.name}</strong>
+                          <small>
+                            {match.number}
+                            {match.city ? ", " + match.city : ""}
+                          </small>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : lookupResult?.status === "not_found" ? (
+              <div className="lookup-resolution reveal">
+                <p className="section-kicker">No match</p>
+                <h3>Customer not found</h3>
+                <p>
+                  No Business Central customer matched “{lookupResult.query}”.
+                  Try the exact customer number or another name.
+                </p>
+              </div>
+            ) : (
+              <div className="evidence-empty">
+                <div
+                  className="evidence-empty-rule"
+                  aria-hidden="true"
+                />
+                <p>
+                  The AI response is not the proof. Verify any customer
+                  directly against Business Central, or start a voice
+                  session and let the tool call select the customer.
+                </p>
+              </div>
+            )
           ) : (
             <div className="evidence-content reveal">
               <div className="primary-metric">
@@ -539,6 +767,36 @@ export default function Home() {
                   </strong>
                 </div>
               </div>
+
+              <dl
+                className="customer-facts"
+                aria-label="Customer record"
+              >
+                <div>
+                  <dt>Customer no.</dt>
+                  <dd className="mono">{customer?.number}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>
+                    {customer?.email ? (
+                      <a href={"mailto:" + customer.email}>
+                        {customer.email}
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Location</dt>
+                  <dd>
+                    {[customer?.city, customer?.state, customer?.country]
+                      .filter(Boolean)
+                      .join(", ") || "Not provided"}
+                  </dd>
+                </div>
+              </dl>
 
               <dl className="evidence-meta">
                 <div>
@@ -689,17 +947,74 @@ export default function Home() {
               label="Largest order"
               order={sales?.largest_order ?? null}
               currency={currency}
-              detail={
-                sales?.largest_order?.lines?.[0]
-                  ? String(
-                      sales.largest_order.lines[0].quantity,
-                    ) +
-                    " x " +
-                    sales.largest_order.lines[0].description
-                  : undefined
-              }
+              lines={sales?.largest_order?.lines}
             />
           </div>
+        </section>
+
+        <section
+          className="history-panel"
+          aria-labelledby="history-title"
+        >
+          <div className="history-heading">
+            <div>
+              <p className="section-kicker">Session trace</p>
+              <h2 id="history-title">Conversation history</h2>
+              <p>
+                Voice, tool and verification events from this browser
+                session. Nothing here is stored on our server.
+              </p>
+            </div>
+
+            <div className="history-actions">
+              <span aria-live="polite">{copyStatus}</span>
+              <button
+                type="button"
+                onClick={() => void copySession()}
+                disabled={!history.length}
+              >
+                Copy session
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHistory([]);
+                  setCopyStatus("");
+                }}
+                disabled={!history.length}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {history.length ? (
+            <ol className="history-list">
+              {history.map((entry) => (
+                <li key={entry.id} className={"history-" + entry.kind}>
+                  <time>{entry.at}</time>
+                  <div>
+                    <span>{entry.label}</span>
+                    <p>{entry.text}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyText(entry.text, "Entry copied")
+                    }
+                    aria-label={"Copy " + entry.label + " entry"}
+                  >
+                    Copy
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="history-empty">
+              Start a voice session or verify a customer. The trace will
+              appear here in chronological order.
+            </p>
+          )}
         </section>
       </main>
     </div>
@@ -741,12 +1056,12 @@ function OrderRecord({
   label,
   order,
   currency,
-  detail,
+  lines,
 }: {
   label: string;
   order: OrderSummary | null;
   currency: string;
-  detail?: string;
+  lines?: LargestOrder["lines"];
 }) {
   return (
     <article className="order-record">
@@ -762,8 +1077,30 @@ function OrderRecord({
           </div>
           <div className="record-meta">
             <span className="mono">{order.order_date}</span>
-            {detail && <span>{detail}</span>}
+            <span>
+              {order.fully_shipped
+                ? "Fully shipped"
+                : "Not fully shipped"}
+            </span>
           </div>
+
+          {lines?.length ? (
+            <ul className="order-lines">
+              {lines.slice(0, 3).map((line) => (
+                <li key={line.item_number + line.description}>
+                  <span>
+                    <strong className="mono">
+                      {line.item_number}
+                    </strong>
+                    <small>{line.description}</small>
+                  </span>
+                  <span className="mono">
+                    {line.quantity} × {money(line.unit_price, currency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </>
       ) : (
         <p className="record-empty">
