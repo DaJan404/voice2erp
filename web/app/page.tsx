@@ -151,7 +151,7 @@ export default function Home() {
 
   useEffect(() => {
     return () => {
-      voiceSessionRef.current?.stop();
+      voiceSessionRef.current?.stop(false);
       voiceSessionRef.current = null;
     };
   }, []);
@@ -450,14 +450,24 @@ export default function Home() {
             <div
               className={
                 "verification-state" +
-                (verification ? " is-verified" : "")
+                (verification && !verificationLoading
+                  ? " is-verified"
+                  : "")
               }
               aria-live="polite"
             >
               <span aria-hidden="true">
-                {verification ? "✓" : "○"}
+                {verificationLoading
+                  ? "↻"
+                  : verification
+                    ? "✓"
+                    : "○"}
               </span>
-              {verification ? "Verified live" : "Not verified yet"}
+              {verificationLoading
+                ? "Refreshing source"
+                : verification
+                  ? "Verified live"
+                  : "Not verified yet"}
             </div>
           </div>
 
