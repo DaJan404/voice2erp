@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from typing import Protocol, cast
 from urllib.parse import ParseResult, parse_qs, urlparse
 
@@ -30,7 +31,10 @@ def json_response(
     return Response(
         json.dumps(payload),
         status=status,
-        headers={"content-type": "application/json"},
+        headers={
+            "content-type": "application/json",
+            "cache-control": "no-store",
+        },
     )
 
 
@@ -43,6 +47,9 @@ class Default(WorkerEntrypoint):
 
         if url.path == "/api/customers/briefing":
             return await self.get_customer_briefing(request, url)
+
+        if url.path == "/api/verify/customer":
+            return await self.verify_customer(request, url)
 
         if url.path.startswith("/api/debug/bc/customer/"):
             customer_number = url.path.removeprefix("/api/debug/bc/customer/").strip()
@@ -88,8 +95,7 @@ class Default(WorkerEntrypoint):
                 status=auth_error,
             )
 
-        params: dict[str, list[str]] = parse_qs(url.query)
-        query = params.get("query", [""])[0].strip()
+        query = self._customer_query(url)
 
         if not query:
             return json_response(
@@ -115,6 +121,97 @@ class Default(WorkerEntrypoint):
             )
 
         return json_response(result)
+
+    async def verify_customer(
+        self,
+        request: RequestLike,
+        url: ParseResult,
+    ) -> Response:
+        expected_token = cast(
+            str | None,
+            getattr(self.env, "VOICE2ERP_VERIFY_TOKEN", None),
+        )
+
+        provided_token = request.headers.get("X-VOICE2ERP-VERIFY-TOKEN")
+
+        auth_error = validate_tool_token(
+            expected_token,
+            provided_token,
+        )
+
+        if auth_error is not None:
+            detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
+
+            return json_response(
+                {"detail": detail},
+                status=auth_error,
+            )
+
+        query = self._customer_query(url)
+
+        if not query:
+            return json_response(
+                {"detail": "Missing customer query"},
+                status=400,
+            )
+
+        try:
+            client = self._business_central_client()
+            service = BriefingService(client)
+            result = await service.get_customer_briefing(query)
+
+        except BusinessCentralError as exc:
+            print(f"Business Central verification error: {exc}")
+
+            return json_response(
+                {
+                    "status": "error",
+                    "detail": "Business Central verification failed",
+                },
+                status=502,
+            )
+
+        verification = {
+            "source": "business_central",
+            "source_name": "Microsoft Dynamics 365 Business Central",
+            "environment": self._require_env("BC_ENVIRONMENT"),
+            "company_id": self._require_env("BC_COMPANY_ID"),
+            "retrieved_at": datetime.now(timezone.utc).isoformat().replace(
+                "+00:00",
+                "Z",
+            ),
+            "fresh": True,
+        }
+
+        result_status = result.get("status")
+
+        if result_status == "found":
+            return json_response(
+                {
+                    "status": "verified",
+                    "verification": verification,
+                    "briefing": result["briefing"],
+                }
+            )
+
+        if result_status == "ambiguous":
+            return json_response(
+                {
+                    "status": "ambiguous",
+                    "verification": verification,
+                    "query": query,
+                    "customers": result.get("customers", []),
+                }
+            )
+
+        return json_response(
+            {
+                "status": "not_found",
+                "verification": verification,
+                "query": query,
+            },
+            status=404,
+        )
 
     async def get_bc_customer_debug(
         self,
@@ -172,6 +269,11 @@ class Default(WorkerEntrypoint):
                 "customer": customer,
             }
         )
+
+    @staticmethod
+    def _customer_query(url: ParseResult) -> str:
+        params: dict[str, list[str]] = parse_qs(url.query)
+        return params.get("query", [""])[0].strip()
 
     def _require_env(self, name: str) -> str:
         value = cast(
