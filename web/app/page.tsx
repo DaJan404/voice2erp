@@ -42,6 +42,12 @@ type VerificationResponse = {
   verification: VerificationMetadata;
   briefing: {
     source: string;
+    resolved_contact: {
+      name: string;
+      professional_title: string;
+      email: string;
+      phone: string;
+    } | null;
     customer: {
       number: string;
       name: string;
@@ -49,8 +55,29 @@ type VerificationResponse = {
       state: string;
       country: string;
       email: string;
+      phone: string;
+      website: string;
       balance_due: number;
       currency: string;
+    };
+    accounts_receivable: {
+      open_invoice_count: number;
+      open_invoice_value: number;
+      overdue_invoice_count: number;
+      overdue_value: number;
+      balance_vs_open_invoices_difference: number;
+      open_invoices_cover_balance: boolean;
+      open_invoices: Array<{
+        number: string;
+        invoice_date: string;
+        due_date: string;
+        status: string;
+        currency: string;
+        total: number;
+        remaining_amount: number;
+        overdue: boolean;
+        dispute_status: string;
+      }>;
     };
     sales: {
       open_orders: number;
@@ -418,6 +445,8 @@ export default function Home() {
   }
 
   const customer = verification?.briefing.customer;
+  const resolvedContact = verification?.briefing.resolved_contact;
+  const receivables = verification?.briefing.accounts_receivable;
   const sales = verification?.briefing.sales;
   const currency = customer?.currency ?? "USD";
 
@@ -777,11 +806,28 @@ export default function Home() {
                   <dd className="mono">{customer?.number}</dd>
                 </div>
                 <div>
+                  <dt>Contact</dt>
+                  <dd>
+                    {resolvedContact?.name || "Not resolved from query"}
+                    {resolvedContact?.professional_title ? (
+                      <small>{resolvedContact.professional_title}</small>
+                    ) : null}
+                    {resolvedContact?.phone ? (
+                      <small className="mono">{resolvedContact.phone}</small>
+                    ) : null}
+                  </dd>
+                </div>
+                <div>
                   <dt>Email</dt>
                   <dd>
-                    {customer?.email ? (
-                      <a href={"mailto:" + customer.email}>
-                        {customer.email}
+                    {resolvedContact?.email || customer?.email ? (
+                      <a
+                        href={
+                          "mailto:" +
+                          (resolvedContact?.email || customer?.email)
+                        }
+                      >
+                        {resolvedContact?.email || customer?.email}
                       </a>
                     ) : (
                       "Not provided"
@@ -797,6 +843,88 @@ export default function Home() {
                   </dd>
                 </div>
               </dl>
+
+              <section
+                className="receivables-section"
+                aria-labelledby="receivables-title"
+              >
+                <div className="receivables-heading">
+                  <div>
+                    <span className="metric-label">Accounts receivable</span>
+                    <h3 id="receivables-title">
+                      {money(
+                        receivables?.open_invoice_value ?? 0,
+                        currency,
+                      )}
+                    </h3>
+                    <p>
+                      {receivables?.open_invoice_count ?? 0} open invoices
+                      {receivables?.overdue_invoice_count
+                        ? ", " +
+                          receivables.overdue_invoice_count +
+                          " overdue"
+                        : ", none overdue"}
+                    </p>
+                  </div>
+                  <div className="receivables-overdue">
+                    <span>Overdue value</span>
+                    <strong>
+                      {money(receivables?.overdue_value ?? 0, currency)}
+                    </strong>
+                  </div>
+                </div>
+
+                {receivables?.open_invoices.length ? (
+                  <ol className="receivable-list">
+                    {receivables.open_invoices
+                      .slice(0, 3)
+                      .map((invoice) => (
+                        <li key={invoice.number}>
+                          <div>
+                            <strong className="mono">
+                              {invoice.number}
+                            </strong>
+                            <span>
+                              Due {invoice.due_date || "not set"}
+                              {invoice.overdue ? " · overdue" : ""}
+                            </span>
+                          </div>
+                          <div>
+                            <strong>
+                              {money(
+                                invoice.remaining_amount,
+                                invoice.currency || currency,
+                              )}
+                            </strong>
+                            <span>
+                              {invoice.dispute_status ||
+                                invoice.status ||
+                                "Open"}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                  </ol>
+                ) : (
+                  <p className="receivables-empty">
+                    No open invoice evidence was returned.
+                  </p>
+                )}
+
+                {receivables &&
+                !receivables.open_invoices_cover_balance ? (
+                  <p className="receivables-note">
+                    Open invoice evidence differs from the customer balance by{" "}
+                    <strong>
+                      {money(
+                        receivables.balance_vs_open_invoices_difference,
+                        currency,
+                      )}
+                    </strong>
+                    . VOICE2ERP should not infer a cause from that difference.
+                  </p>
+                ) : null}
+              </section>
 
               <dl className="evidence-meta">
                 <div>
