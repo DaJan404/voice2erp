@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
-type Theme = "light" | "dark";
 
 type OrderSummary = {
   number: string;
@@ -76,24 +76,18 @@ function isVerificationResponse(value: unknown): value is VerificationResponse {
 }
 
 export default function Home() {
-  const [theme, setTheme] = useState<Theme>("dark");
   const [verification, setVerification] =
     useState<VerificationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const current = document.documentElement.dataset.theme;
-    if (current === "light" || current === "dark") {
-      setTheme(current);
-    }
-  }, []);
-
   function toggleTheme() {
-    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    const currentTheme =
+      document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
     document.documentElement.dataset.theme = nextTheme;
     window.localStorage.setItem("voice2erp-theme", nextTheme);
-    setTheme(nextTheme);
   }
 
   async function verifyLive() {
@@ -155,7 +149,7 @@ export default function Home() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="VOICE2ERP home">
+        <Link className="brand" href="/" aria-label="VOICE2ERP home">
           <span className="brand-mark" aria-hidden="true">
             V2
           </span>
@@ -163,7 +157,7 @@ export default function Home() {
             <strong>VOICE2ERP</strong>
             <small>Talk. Confirm. Execute. Verify.</small>
           </span>
-        </a>
+        </Link>
 
         <div className="topbar-actions">
           <div
@@ -178,12 +172,15 @@ export default function Home() {
             className="icon-button"
             type="button"
             onClick={toggleTheme}
-            aria-label={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-            }
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
+            aria-label="Toggle color theme"
+            title="Toggle color theme"
           >
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            <span className="theme-icon theme-icon-sun">
+              <SunIcon />
+            </span>
+            <span className="theme-icon theme-icon-moon">
+              <MoonIcon />
+            </span>
           </button>
         </div>
       </header>
