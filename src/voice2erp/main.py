@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol, cast
 from urllib.parse import ParseResult, parse_qs, urlparse
 
@@ -176,7 +176,7 @@ class Default(WorkerEntrypoint):
             "source_name": "Microsoft Dynamics 365 Business Central",
             "environment": self._require_env("BC_ENVIRONMENT"),
             "company_id": self._require_env("BC_COMPANY_ID"),
-            "retrieved_at": datetime.now(timezone.utc).isoformat().replace(
+            "retrieved_at": datetime.now(UTC).isoformat().replace(
                 "+00:00",
                 "Z",
             ),
