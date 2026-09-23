@@ -11,6 +11,7 @@
         "required": [
             "VOICE2ERP_TOOL_TOKEN",
             "VOICE2ERP_VERIFY_TOKEN",
+            "VOICE2ERP_EXECUTE_TOKEN",
             "BC_TENANT_ID",
             "BC_CLIENT_ID",
             "BC_CLIENT_SECRET",
