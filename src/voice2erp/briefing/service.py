@@ -4,7 +4,6 @@ from typing import Literal, Protocol, TypedDict
 
 from voice2erp.business_central.models import (
     Contact,
-    ContactInformation,
     Customer,
     SalesInvoice,
     SalesOrder,
@@ -19,15 +18,10 @@ class BusinessCentralReader(Protocol):
         query: str,
     ) -> list[Customer]: ...
 
-    async def search_contact_information(
+    async def search_contacts(
         self,
         query: str,
-    ) -> list[ContactInformation]: ...
-
-    async def get_contact(
-        self,
-        contact_id: str,
-    ) -> Contact | None: ...
+    ) -> list[Contact]: ...
 
     async def get_customer_by_id(
         self,
@@ -133,18 +127,13 @@ def summarize_order(
 
 
 def summarize_contact(
-    relation: ContactInformation,
-    contact: Contact | None,
+    contact: Contact,
 ) -> BriefingContact:
     return {
-        "name": (
-            contact.get("displayName", "")
-            if contact is not None
-            else relation.get("contactName", "")
-        ),
-        "professional_title": contact.get("jobTitle", "") if contact is not None else "",
-        "email": contact.get("email", "") if contact is not None else "",
-        "phone": contact.get("phoneNumber", "") if contact is not None else "",
+        "name": contact.get("displayName", ""),
+        "professional_title": contact.get("jobTitle", ""),
+        "email": contact.get("email", ""),
+        "phone": contact.get("phoneNumber", ""),
     }
 
 
@@ -179,42 +168,49 @@ class BriefingService:
     async def _resolve_customer(
         self,
         query: str,
-    ) -> tuple[list[Customer], tuple[ContactInformation, Contact | None] | None]:
+    ) -> tuple[list[Customer], Contact | None]:
         customers = await self.bc.search_customers(query)
 
         if customers:
             return customers, None
 
-        relations = await self.bc.search_contact_information(query)
+        contacts = await self.bc.search_contacts(query)
 
-        if not relations:
+        if not contacts:
             return [], None
 
-        customer_ids = list(
+        company_names = list(
             dict.fromkeys(
-                relation["relatedId"]
-                for relation in relations
-                if relation.get("relatedId")
+                contact["companyName"].strip()
+                for contact in contacts
+                if contact.get("companyName", "").strip()
             )
         )
 
-        resolved = await asyncio.gather(
-            *(self.bc.get_customer_by_id(customer_id) for customer_id in customer_ids)
+        customer_groups = await asyncio.gather(
+            *(self.bc.search_customers(company_name) for company_name in company_names)
         )
-        resolved_customers = [customer for customer in resolved if customer is not None]
+
+        resolved_by_id: dict[str, Customer] = {}
+
+        for group in customer_groups:
+            for customer in group:
+                resolved_by_id[customer["id"]] = customer
+
+        resolved_customers = list(resolved_by_id.values())
 
         if len(resolved_customers) == 1:
-            customer_id = resolved_customers[0]["id"]
-            relation = next(
+            customer = resolved_customers[0]
+            contact = next(
                 (
                     candidate
-                    for candidate in relations
-                    if candidate.get("relatedId") == customer_id
+                    for candidate in contacts
+                    if candidate.get("companyName", "").strip().lower()
+                    == customer["displayName"].strip().lower()
                 ),
-                relations[0],
+                contacts[0],
             )
-            contact = await self.bc.get_contact(relation["contactId"])
-            return resolved_customers, (relation, contact)
+            return resolved_customers, contact
 
         return resolved_customers, None
 
@@ -321,7 +317,7 @@ class BriefingService:
             "briefing": {
                 "source": "business_central",
                 "resolved_contact": (
-                    summarize_contact(*resolved_contact) if resolved_contact is not None else None
+                    summarize_contact(resolved_contact) if resolved_contact is not None else None
                 ),
                 "customer": {
                     "number": customer["number"],
