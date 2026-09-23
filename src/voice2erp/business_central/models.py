@@ -15,15 +15,26 @@ class Customer(TypedDict):
     website: NotRequired[str]
 
 
-class CustomerContact(TypedDict):
+class ContactInformation(TypedDict):
+    contactId: str
+    contactNumber: str
+    contactName: str
+    contactType: str
+    relatedId: str
+    relatedType: str
+
+
+class Contact(TypedDict):
     id: str
+    number: str
+    type: str
+    displayName: str
+    jobTitle: str
+    companyNumber: str
+    companyName: str
+    phoneNumber: str
+    mobilePhoneNumber: str
     email: str
-    firstName: str
-    lastName: str
-    professionalTitle: str
-    customerId: str
-    customerName: str
-    primaryPhoneNumber: str
 
 
 class SalesOrder(TypedDict):
