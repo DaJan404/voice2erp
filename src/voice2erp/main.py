@@ -318,10 +318,23 @@ class Default(WorkerEntrypoint):
         if result.get("status") != "prepared" or not verification_request:
             return json_response(result)
 
+        execute_secret = cast(
+            str | None,
+            getattr(self.env, "VOICE2ERP_EXECUTE_TOKEN", None),
+        )
+
+        if not isinstance(execute_secret, str) or not execute_secret.strip():
+            return json_response(
+                {
+                    "status": "error",
+                    "detail": "Quote confirmation service is unavailable",
+                },
+                status=503,
+            )
+
         preview = cast(dict[str, object], result["preview"])
         customer = cast(dict[str, object], preview["customer"])
         item = cast(dict[str, object], preview["item"])
-        execute_secret = self._require_env("VOICE2ERP_EXECUTE_TOKEN")
         expires_at = int(time.time()) + 600
 
         confirmation_token = create_confirmation_token(
