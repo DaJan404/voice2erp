@@ -1,30 +1,54 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
+
+const themeScript = [
+  "(() => {",
+  "  try {",
+  '    const saved = localStorage.getItem("voice2erp-theme");',
+  "    const theme =",
+  '      saved === "light" || saved === "dark"',
+  "        ? saved",
+  '        : window.matchMedia("(prefers-color-scheme: dark)").matches',
+  '          ? "dark"',
+  '          : "light";',
+  "    document.documentElement.dataset.theme = theme;",
+  "  } catch {",
+  '    document.documentElement.dataset.theme = "dark";',
+  "  }",
+  "})();",
+].join("\n");
 
 export const metadata: Metadata = {
-  title: "VOICE2ERP — Talk. Confirm. Execute. Verify.",
+  title: "VOICE2ERP | Live voice operations for Business Central",
   description:
-    "A voice-first operating layer for Microsoft Dynamics 365 Business Central.",
+    "Talk to Microsoft Dynamics 365 Business Central and verify every ERP answer against live source data.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={instrumentSans.variable + " " + ibmPlexMono.variable}
     >
-      <body className="min-h-full">{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
