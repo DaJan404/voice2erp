@@ -751,7 +751,7 @@ button:disabled {
 
 .customer-facts {
   display: grid;
-  grid-template-columns: 0.7fr 1.3fr 1.2fr;
+  grid-template-columns: 0.7fr 1.15fr 1.2fr 1.15fr;
   gap: 22px;
   margin: 0;
   padding: 22px 0;
@@ -774,10 +774,120 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.customer-facts dd small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .customer-facts a {
   color: inherit;
   text-decoration-color: color-mix(in oklch, var(--brand) 50%, transparent);
   text-underline-offset: 3px;
+}
+
+.receivables-section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.receivables-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.receivables-heading h3 {
+  margin: 7px 0 0;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 610;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.receivables-heading p {
+  margin: 8px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.receivables-overdue {
+  text-align: right;
+}
+
+.receivables-overdue span,
+.receivables-overdue strong {
+  display: block;
+}
+
+.receivables-overdue span {
+  color: var(--text-muted);
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.receivables-overdue strong {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 610;
+  font-variant-numeric: tabular-nums;
+}
+
+.receivable-list {
+  margin: 20px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.receivable-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.receivable-list li > div:last-child {
+  text-align: right;
+}
+
+.receivable-list strong,
+.receivable-list span {
+  display: block;
+}
+
+.receivable-list strong {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.receivable-list span {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.receivables-note,
+.receivables-empty {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.receivables-note strong {
+  color: var(--text-soft);
+  font-weight: 620;
 }
 
 .evidence-meta {
@@ -1380,6 +1490,15 @@ button:disabled {
   .customer-facts,
   .evidence-meta {
     grid-template-columns: 1fr;
+  }
+
+  .receivables-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .receivables-overdue {
+    text-align: left;
   }
 
   .secondary-metrics > div + div {
