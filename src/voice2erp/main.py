@@ -10,8 +10,8 @@ from voice2erp.briefing.service import BriefingService
 from voice2erp.business_central.client import (
     BusinessCentralClient,
     BusinessCentralConfig,
-    BusinessCentralError,
 )
+from voice2erp.business_central.errors import BusinessCentralError
 from voice2erp.quotes.confirmation import (
     QuoteConfirmationError,
     create_confirmation_token,
