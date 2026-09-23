@@ -30,7 +30,7 @@ class RequestLike(Protocol):
     method: str
     headers: HeadersLike
 
-    async def json(self) -> object: ...
+    async def text(self) -> str: ...
 
 
 class VerificationMetadata(TypedDict):
@@ -381,9 +381,11 @@ class Default(WorkerEntrypoint):
                 status=auth_error,
             )
 
+        request_body = await request.text()
+
         try:
-            body = await request.json()
-        except Exception:
+            body = json.loads(request_body)
+        except json.JSONDecodeError:
             return json_response(
                 {"detail": "Invalid JSON body"},
                 status=400,
