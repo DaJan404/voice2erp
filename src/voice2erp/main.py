@@ -1,6 +1,6 @@
 import json
 from datetime import UTC, datetime
-from typing import Protocol, cast
+from typing import Protocol, TypedDict, cast
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from workers import Response, WorkerEntrypoint
@@ -21,6 +21,15 @@ class HeadersLike(Protocol):
 class RequestLike(Protocol):
     url: str
     headers: HeadersLike
+
+
+class VerificationMetadata(TypedDict):
+    source: str
+    source_name: str
+    environment: str
+    company_id: str
+    retrieved_at: str
+    fresh: bool
 
 
 def json_response(
@@ -171,7 +180,7 @@ class Default(WorkerEntrypoint):
                 status=502,
             )
 
-        verification = {
+        verification: VerificationMetadata = {
             "source": "business_central",
             "source_name": "Microsoft Dynamics 365 Business Central",
             "environment": self._require_env("BC_ENVIRONMENT"),
@@ -183,9 +192,7 @@ class Default(WorkerEntrypoint):
             "fresh": True,
         }
 
-        result_status = result.get("status")
-
-        if result_status == "found":
+        if result["status"] == "found":
             return json_response(
                 {
                     "status": "verified",
@@ -194,7 +201,7 @@ class Default(WorkerEntrypoint):
                 }
             )
 
-        if result_status == "ambiguous":
+        if result["status"] == "ambiguous":
             return json_response(
                 {
                     "status": "ambiguous",
