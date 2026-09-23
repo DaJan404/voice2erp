@@ -112,9 +112,63 @@ type VerificationLookupResult =
   | AmbiguousVerificationResponse
   | NotFoundVerificationResponse;
 
+type QuoteToolArgs = {
+  customer_query: string;
+  item_query: string;
+  quantity: number;
+};
+
+type QuotePreviewResponse = {
+  status: "prepared";
+  preview: {
+    customer: {
+      number: string;
+      name: string;
+    };
+    item: {
+      number: string;
+      description: string;
+      unit_price: number;
+      unit_of_measure: string;
+      price_includes_tax: boolean;
+    };
+    quantity: number;
+    reference_subtotal: number;
+    currency: string;
+    requires_confirmation: true;
+    price_note: string;
+  };
+  confirmation_token: string;
+  confirmation_expires_at: number;
+};
+
+type QuoteCreationResponse = {
+  status: "created" | "existing";
+  verification: VerificationMetadata;
+  quote: {
+    id: string;
+    number: string;
+    customer_number: string;
+    customer_name: string;
+    document_date: string;
+    external_document_number: string;
+    currency: string;
+    total: number;
+    status: string;
+  };
+  lines: Array<{
+    item_number: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    unit_of_measure: string;
+  }>;
+};
+
 type HistoryEntry = {
   id: number;
-  kind: "user" | "agent" | "tool" | "verification";
+  kind: "user" | "agent" | "tool" | "verification" | "action";
   label: string;
   text: string;
   at: string;
@@ -161,6 +215,109 @@ function isNotFoundVerificationResponse(
       "status" in value &&
       value.status === "not_found",
   );
+}
+
+function isQuotePreviewResponse(
+  value: unknown,
+): value is QuotePreviewResponse {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "status" in value &&
+      value.status === "prepared" &&
+      "preview" in value &&
+      value.preview &&
+      typeof value.preview === "object" &&
+      "confirmation_token" in value &&
+      typeof value.confirmation_token === "string" &&
+      value.confirmation_token,
+  );
+}
+
+function isQuoteCreationResponse(
+  value: unknown,
+): value is QuoteCreationResponse {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "status" in value &&
+      (value.status === "created" || value.status === "existing") &&
+      "quote" in value &&
+      value.quote &&
+      typeof value.quote === "object" &&
+      "lines" in value &&
+      Array.isArray(value.lines),
+  );
+}
+
+function extractQuoteToolArgs(args: unknown): QuoteToolArgs | null {
+  if (typeof args === "string") {
+    try {
+      return extractQuoteToolArgs(JSON.parse(args));
+    } catch {
+      return null;
+    }
+  }
+
+  if (!args || typeof args !== "object") {
+    return null;
+  }
+
+  if (
+    !("customer_query" in args) ||
+    !("item_query" in args) ||
+    !("quantity" in args)
+  ) {
+    return null;
+  }
+
+  const customerQuery = args.customer_query;
+  const itemQuery = args.item_query;
+  const quantity =
+    typeof args.quantity === "number"
+      ? args.quantity
+      : typeof args.quantity === "string"
+        ? Number(args.quantity)
+        : Number.NaN;
+
+  if (
+    typeof customerQuery !== "string" ||
+    !customerQuery.trim() ||
+    typeof itemQuery !== "string" ||
+    !itemQuery.trim() ||
+    !Number.isFinite(quantity) ||
+    quantity <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    customer_query: customerQuery.trim(),
+    item_query: itemQuery.trim(),
+    quantity,
+  };
+}
+
+function responseDetail(value: unknown, fallback: string) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "detail" in value &&
+    typeof value.detail === "string"
+  ) {
+    return value.detail;
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "status" in value &&
+    typeof value.status === "string"
+  ) {
+    return value.status.replaceAll("_", " ");
+  }
+
+  return fallback;
 }
 
 function extractToolQuery(args: unknown): string | null {
@@ -236,6 +393,15 @@ export default function Home() {
     useState<VerificationLookupResult | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [copyStatus, setCopyStatus] = useState("");
+  const [quotePreview, setQuotePreview] =
+    useState<QuotePreviewResponse | null>(null);
+  const [quoteResult, setQuoteResult] =
+    useState<QuoteCreationResponse | null>(null);
+  const [quoteRequestId, setQuoteRequestId] =
+    useState<string | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteExecuting, setQuoteExecuting] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -371,6 +537,121 @@ export default function Home() {
     }
   }
 
+  async function prepareQuote(args: QuoteToolArgs) {
+    setQuoteLoading(true);
+    setQuoteError(null);
+    setQuoteResult(null);
+
+    try {
+      const response = await fetch("/api/quotes/prepare", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(args),
+        cache: "no-store",
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || !isQuotePreviewResponse(data)) {
+        throw new Error(
+          responseDetail(data, "Could not prepare the sales quote."),
+        );
+      }
+
+      setQuotePreview(data);
+      setQuoteRequestId(crypto.randomUUID());
+
+      addHistory(
+        "action",
+        "Quote prepared",
+        String(data.preview.quantity) +
+          " × " +
+          data.preview.item.number +
+          " " +
+          data.preview.item.description +
+          " for " +
+          data.preview.customer.name +
+          ". Awaiting human confirmation.",
+      );
+    } catch (caught) {
+      setQuotePreview(null);
+      setQuoteRequestId(null);
+      setQuoteError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not prepare the sales quote.",
+      );
+    } finally {
+      setQuoteLoading(false);
+    }
+  }
+
+  async function confirmQuote() {
+    if (!quotePreview || !quoteRequestId || quoteExecuting) {
+      return;
+    }
+
+    setQuoteExecuting(true);
+    setQuoteError(null);
+
+    try {
+      const response = await fetch("/api/quotes/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          confirmation_token: quotePreview.confirmation_token,
+          request_id: quoteRequestId,
+        }),
+        cache: "no-store",
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || !isQuoteCreationResponse(data)) {
+        throw new Error(
+          responseDetail(data, "Could not create the sales quote."),
+        );
+      }
+
+      setQuoteResult(data);
+
+      addHistory(
+        "action",
+        "Business Central write",
+        "Sales quote " +
+          data.quote.number +
+          " created and independently re-read from Business Central.",
+      );
+
+      void verifyLive(data.quote.customer_number);
+    } catch (caught) {
+      setQuoteError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not create the sales quote.",
+      );
+    } finally {
+      setQuoteExecuting(false);
+    }
+  }
+
+  function cancelQuote() {
+    if (quotePreview && !quoteResult) {
+      addHistory(
+        "action",
+        "Quote cancelled",
+        "Prepared sales quote was cancelled before any ERP write.",
+      );
+    }
+
+    setQuotePreview(null);
+    setQuoteResult(null);
+    setQuoteRequestId(null);
+    setQuoteError(null);
+  }
+
   async function startVoiceSession() {
     if (
       voiceState !== "idle" &&
@@ -425,14 +706,24 @@ export default function Home() {
           name + "(" + serializedArgs + ")",
         );
 
-        if (name !== "get_customer_briefing") {
+        if (name === "prepare_sales_quote") {
+          const quoteArgs = extractQuoteToolArgs(args);
+
+          if (quoteArgs) {
+            void prepareQuote(quoteArgs);
+          } else {
+            setQuoteError("The voice agent returned an invalid quote request.");
+          }
+
           return;
         }
 
-        const query = extractToolQuery(args);
-        if (query) {
-          setCustomerQuery(query);
-          void verifyLive(query);
+        if (name === "get_customer_briefing") {
+          const query = extractToolQuery(args);
+          if (query) {
+            setCustomerQuery(query);
+            void verifyLive(query);
+          }
         }
       },
       onError: (message) => {
@@ -471,6 +762,33 @@ export default function Home() {
       };
     }
 
+    if (quoteExecuting) {
+      return {
+        label: "Creating sales quote",
+        detail:
+          "Human confirmation received. Business Central is writing and re-reading the quote.",
+        state: "working" as const,
+      };
+    }
+
+    if (quoteLoading) {
+      return {
+        label: "Preparing quote",
+        detail:
+          "Resolving the customer and item without writing to Business Central.",
+        state: "working" as const,
+      };
+    }
+
+    if (quoteResult) {
+      return {
+        label: "Quote created and verified",
+        detail:
+          "The new sales quote was re-read from Business Central after the write.",
+        state: "verified" as const,
+      };
+    }
+
     if (verificationLoading) {
       return {
         label: "Querying live ERP data",
@@ -492,7 +810,14 @@ export default function Home() {
       ...VOICE_LABELS.idle,
       state: "idle" as const,
     };
-  }, [verification, verificationLoading, voiceState]);
+  }, [
+    quoteExecuting,
+    quoteLoading,
+    quoteResult,
+    verification,
+    verificationLoading,
+    voiceState,
+  ]);
 
   const buttonLabel =
     voiceState === "connecting"
@@ -571,7 +896,8 @@ export default function Home() {
                 {voiceIsRunning ? <StopIcon /> : <ArrowIcon />}
               </button>
               <span className="action-note">
-                Try: “Brief me on Adatum Corporation.”
+                Try: “Create a quote for Trey Research for 2 ATLANTA
+                Whiteboards.”
               </span>
             </div>
 
@@ -1079,6 +1405,179 @@ export default function Home() {
             />
           </div>
         </section>
+
+        {(quoteLoading ||
+          quotePreview ||
+          quoteResult ||
+          quoteError) && (
+          <section
+            className="quote-panel reveal"
+            aria-labelledby="quote-title"
+          >
+            <div className="quote-heading">
+              <div>
+                <p className="section-kicker">Human-in-the-loop action</p>
+                <h2 id="quote-title">Sales quote confirmation</h2>
+                <p>
+                  VOICE2ERP can prepare the transaction. Only this
+                  confirmation control is allowed to write it to Business
+                  Central.
+                </p>
+              </div>
+
+              <div
+                className={
+                  "quote-state" +
+                  (quoteResult ? " is-verified" : "")
+                }
+                aria-live="polite"
+              >
+                <span aria-hidden="true">
+                  {quoteExecuting
+                    ? "↻"
+                    : quoteResult
+                      ? "✓"
+                      : "○"}
+                </span>
+                {quoteExecuting
+                  ? "Executing"
+                  : quoteResult
+                    ? "Created & verified"
+                    : quoteLoading
+                      ? "Preparing"
+                      : "Awaiting confirmation"}
+              </div>
+            </div>
+
+            {quotePreview && (
+              <div className="quote-composition">
+                <div className="quote-party">
+                  <span className="record-label">Customer</span>
+                  <strong>{quotePreview.preview.customer.name}</strong>
+                  <small className="mono">
+                    {quotePreview.preview.customer.number}
+                  </small>
+                </div>
+
+                <div className="quote-line-preview">
+                  <span className="record-label">Line</span>
+                  <div>
+                    <strong>
+                      {quotePreview.preview.quantity} ×{" "}
+                      {quotePreview.preview.item.description}
+                    </strong>
+                    <span className="mono">
+                      {quotePreview.preview.item.number} ·{" "}
+                      {quotePreview.preview.item.unit_of_measure}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Reference unit price</span>
+                    <strong>
+                      {money(
+                        quotePreview.preview.item.unit_price,
+                        quotePreview.preview.currency || currency,
+                      )}
+                    </strong>
+                  </div>
+                </div>
+
+                {!quoteResult ? (
+                  <>
+                    <div className="quote-reference">
+                      <span>Reference item value</span>
+                      <strong>
+                        {money(
+                          quotePreview.preview.reference_subtotal,
+                          quotePreview.preview.currency || currency,
+                        )}
+                      </strong>
+                      <p>{quotePreview.preview.price_note}</p>
+                    </div>
+
+                    <div className="quote-confirmation">
+                      <div>
+                        <strong>Nothing has been written yet.</strong>
+                        <p>
+                          Confirming creates a draft sales quote and then
+                          re-reads it from Business Central.
+                        </p>
+                      </div>
+                      <div>
+                        <button
+                          className="quote-cancel"
+                          type="button"
+                          onClick={cancelQuote}
+                          disabled={quoteExecuting}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="quote-confirm"
+                          type="button"
+                          onClick={() => void confirmQuote()}
+                          disabled={quoteExecuting}
+                        >
+                          {quoteExecuting
+                            ? "Creating in Business Central"
+                            : "Confirm & create"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="quote-result">
+                    <div>
+                      <span className="record-label">
+                        Business Central quote
+                      </span>
+                      <strong className="mono">
+                        {quoteResult.quote.number}
+                      </strong>
+                      <small>
+                        {quoteResult.quote.status} ·{" "}
+                        {quoteResult.quote.document_date}
+                      </small>
+                    </div>
+                    <div>
+                      <span>Verified total</span>
+                      <strong>
+                        {money(
+                          quoteResult.quote.total,
+                          quoteResult.quote.currency || currency,
+                        )}
+                      </strong>
+                      <small>
+                        Re-read{" "}
+                        {new Date(
+                          quoteResult.verification.retrieved_at,
+                        ).toLocaleString()}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={cancelQuote}
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {quoteLoading && !quotePreview && (
+              <p className="quote-placeholder">
+                Resolving the customer and item against Business Central…
+              </p>
+            )}
+
+            {quoteError && (
+              <p className="error-message" role="alert">
+                {quoteError}
+              </p>
+            )}
+          </section>
+        )}
 
         <section
           className="history-panel"
