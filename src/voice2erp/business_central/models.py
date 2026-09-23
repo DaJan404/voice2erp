@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class Customer(TypedDict):
@@ -11,6 +11,19 @@ class Customer(TypedDict):
     email: str
     balanceDue: float
     currencyCode: str
+    phoneNumber: NotRequired[str]
+    website: NotRequired[str]
+
+
+class CustomerContact(TypedDict):
+    id: str
+    email: str
+    firstName: str
+    lastName: str
+    professionalTitle: str
+    customerId: str
+    customerName: str
+    primaryPhoneNumber: str
 
 
 class SalesOrder(TypedDict):
@@ -34,6 +47,22 @@ class SalesQuote(TypedDict):
     currencyCode: str
     totalAmountIncludingTax: float
     status: str
+
+
+class SalesInvoice(TypedDict):
+    id: str
+    number: str
+    invoiceDate: str
+    postingDate: str
+    dueDate: str
+    customerNumber: str
+    customerName: str
+    currencyCode: str
+    remainingAmount: float
+    totalAmountIncludingTax: float
+    status: str
+    disputeStatus: NotRequired[str]
+    shipToContact: NotRequired[str]
 
 
 class SalesOrderLine(TypedDict):
