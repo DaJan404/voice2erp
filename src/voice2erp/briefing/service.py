@@ -3,8 +3,9 @@ from datetime import UTC, datetime
 from typing import Literal, Protocol, TypedDict
 
 from voice2erp.business_central.models import (
+    Contact,
+    ContactInformation,
     Customer,
-    CustomerContact,
     SalesInvoice,
     SalesOrder,
     SalesOrderLine,
@@ -18,10 +19,15 @@ class BusinessCentralReader(Protocol):
         query: str,
     ) -> list[Customer]: ...
 
-    async def search_customer_contacts(
+    async def search_contact_information(
         self,
         query: str,
-    ) -> list[CustomerContact]: ...
+    ) -> list[ContactInformation]: ...
+
+    async def get_contact(
+        self,
+        contact_id: str,
+    ) -> Contact | None: ...
 
     async def get_customer_by_id(
         self,
@@ -127,22 +133,18 @@ def summarize_order(
 
 
 def summarize_contact(
-    contact: CustomerContact,
+    relation: ContactInformation,
+    contact: Contact | None,
 ) -> BriefingContact:
-    name = " ".join(
-        part
-        for part in (
-            contact.get("firstName", "").strip(),
-            contact.get("lastName", "").strip(),
-        )
-        if part
-    )
-
     return {
-        "name": name,
-        "professional_title": contact.get("professionalTitle", ""),
-        "email": contact.get("email", ""),
-        "phone": contact.get("primaryPhoneNumber", ""),
+        "name": (
+            contact.get("displayName", "")
+            if contact is not None
+            else relation.get("contactName", "")
+        ),
+        "professional_title": contact.get("jobTitle", "") if contact is not None else "",
+        "email": contact.get("email", "") if contact is not None else "",
+        "phone": contact.get("phoneNumber", "") if contact is not None else "",
     }
 
 
@@ -177,22 +179,22 @@ class BriefingService:
     async def _resolve_customer(
         self,
         query: str,
-    ) -> tuple[list[Customer], CustomerContact | None]:
+    ) -> tuple[list[Customer], tuple[ContactInformation, Contact | None] | None]:
         customers = await self.bc.search_customers(query)
 
         if customers:
             return customers, None
 
-        contacts = await self.bc.search_customer_contacts(query)
+        relations = await self.bc.search_contact_information(query)
 
-        if not contacts:
+        if not relations:
             return [], None
 
         customer_ids = list(
             dict.fromkeys(
-                contact["customerId"]
-                for contact in contacts
-                if contact.get("customerId")
+                relation["relatedId"]
+                for relation in relations
+                if relation.get("relatedId")
             )
         )
 
@@ -203,15 +205,16 @@ class BriefingService:
 
         if len(resolved_customers) == 1:
             customer_id = resolved_customers[0]["id"]
-            contact = next(
+            relation = next(
                 (
                     candidate
-                    for candidate in contacts
-                    if candidate.get("customerId") == customer_id
+                    for candidate in relations
+                    if candidate.get("relatedId") == customer_id
                 ),
-                contacts[0],
+                relations[0],
             )
-            return resolved_customers, contact
+            contact = await self.bc.get_contact(relation["contactId"])
+            return resolved_customers, (relation, contact)
 
         return resolved_customers, None
 
@@ -318,7 +321,7 @@ class BriefingService:
             "briefing": {
                 "source": "business_central",
                 "resolved_contact": (
-                    summarize_contact(resolved_contact) if resolved_contact is not None else None
+                    summarize_contact(*resolved_contact) if resolved_contact is not None else None
                 ),
                 "customer": {
                     "number": customer["number"],
