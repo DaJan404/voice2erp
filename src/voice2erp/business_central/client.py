@@ -10,10 +10,12 @@ from workers import fetch
 from voice2erp.business_central.models import (
     Contact,
     Customer,
+    Item,
     SalesInvoice,
     SalesOrder,
     SalesOrderLine,
     SalesQuote,
+    SalesQuoteLine,
 )
 
 
@@ -144,6 +146,67 @@ class BusinessCentralClient:
 
         return cast(dict[str, object], payload)
 
+    async def _post(
+        self,
+        path: str,
+        body: dict[str, object],
+    ) -> dict[str, object]:
+        token = await self._get_access_token()
+
+        response = cast(
+            FetchResponseLike,
+            await fetch(
+                f"{self.base_url}/{path}",
+                method=HTTPMethod.POST,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body=json.dumps(body),
+            ),
+        )
+
+        response_text = await response.text()
+
+        if not response.ok:
+            raise BusinessCentralError(
+                f"Business Central returned HTTP {response.status}: {response_text}"
+            )
+
+        payload = json.loads(response_text)
+
+        if not isinstance(payload, dict):
+            raise BusinessCentralError("Business Central returned an unexpected response")
+
+        return cast(dict[str, object], payload)
+
+    async def _delete(
+        self,
+        path: str,
+    ) -> None:
+        token = await self._get_access_token()
+
+        response = cast(
+            FetchResponseLike,
+            await fetch(
+                f"{self.base_url}/{path}",
+                method=HTTPMethod.DELETE,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "If-Match": "*",
+                },
+            ),
+        )
+
+        if response.ok:
+            return
+
+        response_text = await response.text()
+        raise BusinessCentralError(
+            f"Business Central returned HTTP {response.status}: {response_text}"
+        )
+
     @staticmethod
     def _odata_string(value: str) -> str:
         return value.replace("'", "''")
@@ -268,6 +331,58 @@ class BusinessCentralClient:
             )
         ]
 
+    async def get_item(
+        self,
+        item_number: str,
+    ) -> Item | None:
+        safe_number = self._odata_string(item_number)
+
+        payload = await self._get(
+            "items",
+            {
+                "$filter": f"number eq '{safe_number}'",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list) or not values:
+            return None
+
+        return cast(Item, values[0])
+
+    async def search_items(
+        self,
+        query: str,
+    ) -> list[Item]:
+        normalized_query = query.strip()
+
+        if not normalized_query:
+            return []
+
+        exact_item = await self.get_item(normalized_query)
+
+        if exact_item is not None:
+            return [exact_item]
+
+        safe_query = self._odata_string(normalized_query.lower())
+
+        payload = await self._get(
+            "items",
+            {
+                "$filter": f"contains(tolower(displayName),'{safe_query}')",
+                "$schemaversion": "2.1",
+                "$top": "10",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list):
+            return []
+
+        return cast(list[Item], values)
+
     async def get_sales_orders(
         self,
         customer_number: str,
@@ -341,3 +456,92 @@ class BusinessCentralClient:
             return []
 
         return cast(list[SalesOrderLine], values)
+
+    async def get_sales_quote(
+        self,
+        quote_id: str,
+    ) -> SalesQuote:
+        payload = await self._get(f"salesQuotes({quote_id})")
+        return cast(SalesQuote, payload)
+
+    async def get_sales_quote_by_external_document_number(
+        self,
+        external_document_number: str,
+    ) -> SalesQuote | None:
+        safe_number = self._odata_string(external_document_number)
+
+        payload = await self._get(
+            "salesQuotes",
+            {
+                "$filter": f"externalDocumentNumber eq '{safe_number}'",
+                "$top": "2",
+            },
+        )
+
+        values = payload.get("value")
+
+        if not isinstance(values, list) or not values:
+            return None
+
+        if len(values) > 1:
+            raise BusinessCentralError(
+                "Multiple sales quotes matched the same external document number"
+            )
+
+        return cast(SalesQuote, values[0])
+
+    async def get_sales_quote_lines(
+        self,
+        quote_id: str,
+    ) -> list[SalesQuoteLine]:
+        payload = await self._get(f"salesQuotes({quote_id})/salesQuoteLines")
+
+        values = payload.get("value")
+
+        if not isinstance(values, list):
+            return []
+
+        return cast(list[SalesQuoteLine], values)
+
+    async def create_sales_quote(
+        self,
+        *,
+        customer_number: str,
+        document_date: str,
+        external_document_number: str,
+    ) -> SalesQuote:
+        payload = await self._post(
+            "salesQuotes",
+            {
+                "customerNumber": customer_number,
+                "documentDate": document_date,
+                "externalDocumentNumber": external_document_number,
+            },
+        )
+
+        return cast(SalesQuote, payload)
+
+    async def create_sales_quote_line(
+        self,
+        *,
+        quote_id: str,
+        item_id: str,
+        quantity: float,
+    ) -> SalesQuoteLine:
+        payload = await self._post(
+            f"salesQuotes({quote_id})/salesQuoteLines",
+            {
+                "itemId": item_id,
+                "lineType": "Item",
+                "quantity": quantity,
+            },
+        )
+
+        return cast(SalesQuoteLine, payload)
+
+    async def delete_sales_quote(
+        self,
+        quote_id: str,
+    ) -> None:
+        await self._delete(f"salesQuotes({quote_id})")
+
