@@ -1,5 +1,5 @@
 import asyncio
-from typing import Protocol, TypedDict
+from typing import Literal, Protocol, TypedDict
 
 from voice2erp.business_central.models import (
     Customer,
@@ -53,11 +53,27 @@ class BriefingOrderDetail(BriefingOrderSummary):
     lines: list[BriefingOrderLine]
 
 
-class CustomerBriefingResult(TypedDict, total=False):
-    status: str
+class CustomerBriefingFoundResult(TypedDict):
+    status: Literal["found"]
+    briefing: dict[str, object]
+
+
+class CustomerBriefingAmbiguousResult(TypedDict):
+    status: Literal["ambiguous"]
     query: str
     customers: list[dict[str, str]]
-    briefing: dict[str, object]
+
+
+class CustomerBriefingNotFoundResult(TypedDict):
+    status: Literal["not_found"]
+    query: str
+
+
+type CustomerBriefingResult = (
+    CustomerBriefingFoundResult
+    | CustomerBriefingAmbiguousResult
+    | CustomerBriefingNotFoundResult
+)
 
 
 def summarize_order(
