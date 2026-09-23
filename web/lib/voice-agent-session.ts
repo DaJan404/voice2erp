@@ -420,7 +420,7 @@ export class VoiceAgentSession {
     }
   }
 
-  stop() {
+  stop(notify = true) {
     this.manuallyStopped = true;
     this.ready = false;
     this.playback?.port.postMessage("stop");
@@ -440,7 +440,9 @@ export class VoiceAgentSession {
       socket?.close();
     }
 
-    this.callbacks.onStateChange("idle");
+    if (notify) {
+      this.callbacks.onStateChange("idle");
+    }
   }
 
   private handleMessage(payload: string) {
