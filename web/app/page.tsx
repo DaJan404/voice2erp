@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  VoiceAgentSession,
+  type VoiceSessionState,
+} from "@/lib/voice-agent-session";
 
 type OrderSummary = {
   number: string;
@@ -67,7 +71,9 @@ function money(value: number, currency: string) {
   }).format(value);
 }
 
-function isVerificationResponse(value: unknown): value is VerificationResponse {
+function isVerificationResponse(
+  value: unknown,
+): value is VerificationResponse {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -75,29 +81,101 @@ function isVerificationResponse(value: unknown): value is VerificationResponse {
   return "status" in value && value.status === "verified";
 }
 
+function extractToolQuery(args: unknown): string | null {
+  if (typeof args === "string") {
+    try {
+      return extractToolQuery(JSON.parse(args));
+    } catch {
+      return null;
+    }
+  }
+
+  if (!args || typeof args !== "object" || !("query" in args)) {
+    return null;
+  }
+
+  const query = args.query;
+  return typeof query === "string" && query.trim()
+    ? query.trim()
+    : null;
+}
+
+const VOICE_LABELS: Record<
+  VoiceSessionState,
+  { label: string; detail: string }
+> = {
+  idle: {
+    label: "Ready for a voice session",
+    detail: "Start a session, then ask naturally for a customer briefing.",
+  },
+  connecting: {
+    label: "Connecting voice session",
+    detail: "Securing a short-lived token and preparing microphone audio.",
+  },
+  listening: {
+    label: "Listening",
+    detail: "VOICE2ERP is ready for your next spoken request.",
+  },
+  understanding: {
+    label: "Understanding request",
+    detail: "The agent is resolving customer context and intent.",
+  },
+  querying: {
+    label: "Querying Business Central",
+    detail: "The agent called the live ERP tool for fresh source data.",
+  },
+  speaking: {
+    label: "Speaking",
+    detail: "VOICE2ERP is returning the Business Central result by voice.",
+  },
+  error: {
+    label: "Voice session needs attention",
+    detail: "Review the message below and start a fresh session.",
+  },
+};
+
 export default function Home() {
+  const voiceSessionRef = useRef<VoiceAgentSession | null>(null);
+
   const [verification, setVerification] =
     useState<VerificationResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verificationError, setVerificationError] =
+    useState<string | null>(null);
+
+  const [voiceState, setVoiceState] =
+    useState<VoiceSessionState>("idle");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [userTranscript, setUserTranscript] = useState("");
+  const [agentTranscript, setAgentTranscript] = useState("");
+
+  useEffect(() => {
+    return () => {
+      voiceSessionRef.current?.stop();
+      voiceSessionRef.current = null;
+    };
+  }, []);
 
   function toggleTheme() {
     const currentTheme =
-      document.documentElement.dataset.theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme === "light"
+        ? "light"
+        : "dark";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
 
     document.documentElement.dataset.theme = nextTheme;
     window.localStorage.setItem("voice2erp-theme", nextTheme);
   }
 
-  async function verifyLive() {
-    setLoading(true);
-    setError(null);
+  async function verifyLive(query = "10000") {
+    setVerificationLoading(true);
+    setVerificationError(null);
 
     try {
-      const response = await fetch("/api/verify/customer?query=10000", {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        "/api/verify/customer?query=" + encodeURIComponent(query),
+        { cache: "no-store" },
+      );
       const data: unknown = await response.json();
 
       if (!response.ok || !isVerificationResponse(data)) {
@@ -106,25 +184,98 @@ export default function Home() {
 
       setVerification(data);
     } catch (caught) {
-      setError(
+      setVerificationError(
         caught instanceof Error
           ? caught.message
           : "Live verification failed. Please try again.",
       );
     } finally {
-      setLoading(false);
+      setVerificationLoading(false);
     }
+  }
+
+  async function startVoiceSession() {
+    if (
+      voiceState !== "idle" &&
+      voiceState !== "error" &&
+      voiceState !== "connecting"
+    ) {
+      voiceSessionRef.current?.stop();
+      voiceSessionRef.current = null;
+      return;
+    }
+
+    if (voiceState === "connecting") {
+      return;
+    }
+
+    setVoiceError(null);
+    setUserTranscript("");
+    setAgentTranscript("");
+
+    const session = new VoiceAgentSession({
+      onStateChange: (state) => {
+        setVoiceState(state);
+
+        if (state === "idle" || state === "error") {
+          voiceSessionRef.current = null;
+        }
+      },
+      onTranscript: (speaker, text) => {
+        if (speaker === "user") {
+          setUserTranscript(text);
+        } else {
+          setAgentTranscript(text);
+        }
+      },
+      onToolCall: (name, args) => {
+        if (name !== "get_customer_briefing") {
+          return;
+        }
+
+        const query = extractToolQuery(args);
+        if (query) {
+          void verifyLive(query);
+        }
+      },
+      onError: (message) => {
+        setVoiceError(message);
+      },
+    });
+
+    voiceSessionRef.current = session;
+    await session.start();
   }
 
   const customer = verification?.briefing.customer;
   const sales = verification?.briefing.sales;
   const currency = customer?.currency ?? "USD";
 
+  const voiceIsRunning =
+    voiceState !== "idle" &&
+    voiceState !== "error" &&
+    voiceState !== "connecting";
+
   const activity = useMemo(() => {
-    if (loading) {
+    if (voiceState !== "idle") {
+      return {
+        ...VOICE_LABELS[voiceState],
+        state:
+          voiceState === "error"
+            ? ("error" as const)
+            : voiceState === "querying" ||
+                voiceState === "connecting"
+              ? ("working" as const)
+              : voiceState === "speaking"
+                ? ("speaking" as const)
+                : ("voice" as const),
+      };
+    }
+
+    if (verificationLoading) {
       return {
         label: "Querying live ERP data",
-        detail: "A fresh server-side request is in progress.",
+        detail: "A fresh independent verification request is in progress.",
         state: "working" as const,
       };
     }
@@ -133,18 +284,25 @@ export default function Home() {
       return {
         label: "ERP evidence matched",
         detail:
-          "The values shown were fetched independently from Business Central.",
+          "The source data was fetched independently from Business Central.",
         state: "verified" as const,
       };
     }
 
     return {
-      label: "Ready for the agent",
-      detail:
-        "The voice flow is validated. Browser voice controls are the next integration step.",
+      ...VOICE_LABELS.idle,
       state: "idle" as const,
     };
-  }, [loading, verification]);
+  }, [verification, verificationLoading, voiceState]);
+
+  const buttonLabel =
+    voiceState === "connecting"
+      ? "Connecting"
+      : voiceIsRunning
+        ? "End voice session"
+        : "Start voice session";
+
+  const currentVerifyQuery = customer?.number ?? "10000";
 
   return (
     <div className="app-shell">
@@ -200,21 +358,36 @@ export default function Home() {
 
             <div className="hero-actions">
               <button
-                className="primary-action"
+                className={
+                  "primary-action" +
+                  (voiceIsRunning ? " is-live" : "")
+                }
                 type="button"
-                onClick={verifyLive}
-                disabled={loading}
+                onClick={() => void startVoiceSession()}
+                disabled={voiceState === "connecting"}
+                aria-pressed={voiceIsRunning}
               >
-                {loading ? "Verifying live data" : "Verify live ERP data"}
-                <ArrowIcon />
+                {buttonLabel}
+                {voiceIsRunning ? <StopIcon /> : <ArrowIcon />}
               </button>
               <span className="action-note">
-                Customer 10000, Adatum Corporation
+                Try: “Brief me on Adatum Corporation.”
               </span>
             </div>
+
+            {voiceError && (
+              <p className="voice-error" role="alert">
+                {voiceError}
+              </p>
+            )}
           </div>
 
-          <div className="voice-signal" aria-hidden="true">
+          <div
+            className={
+              "voice-signal voice-signal-" + voiceState
+            }
+            aria-hidden="true"
+          >
             <span style={{ height: "28%" }} />
             <span style={{ height: "58%" }} />
             <span style={{ height: "86%" }} />
@@ -229,13 +402,33 @@ export default function Home() {
             <span style={{ height: "46%" }} />
           </div>
 
+          <div className="transcript-rail" aria-live="polite">
+            <div className="transcript-row">
+              <span className="transcript-speaker">You</span>
+              <p>
+                {userTranscript ||
+                  "Your spoken request will appear here."}
+              </p>
+            </div>
+            <div className="transcript-row">
+              <span className="transcript-speaker">VOICE2ERP</span>
+              <p>
+                {agentTranscript ||
+                  "The agent response will appear here as it speaks."}
+              </p>
+            </div>
+          </div>
+
           <p className="voice-caption">
-            AssemblyAI voice agent, Cloudflare integration, Business Central
-            source of truth
+            AssemblyAI voice session, Cloudflare integration, Business
+            Central source of truth
           </p>
         </section>
 
-        <section className="evidence-panel" aria-labelledby="evidence-title">
+        <section
+          className="evidence-panel"
+          aria-labelledby="evidence-title"
+        >
           <div className="evidence-heading">
             <div>
               <p className="section-kicker">Live ERP evidence</p>
@@ -256,45 +449,56 @@ export default function Home() {
 
             <div
               className={
-                "verification-state" + (verification ? " is-verified" : "")
+                "verification-state" +
+                (verification ? " is-verified" : "")
               }
               aria-live="polite"
             >
-              <span aria-hidden="true">{verification ? "✓" : "○"}</span>
+              <span aria-hidden="true">
+                {verification ? "✓" : "○"}
+              </span>
               {verification ? "Verified live" : "Not verified yet"}
             </div>
           </div>
 
           {!verification ? (
             <div className="evidence-empty">
-              <div className="evidence-empty-rule" aria-hidden="true" />
+              <div
+                className="evidence-empty-rule"
+                aria-hidden="true"
+              />
               <p>
-                The AI response is not the proof. This view performs a separate,
-                uncached Business Central request and displays the result as
-                source evidence.
+                The AI response is not the proof. This view performs a
+                separate, uncached Business Central request and displays
+                the result as source evidence.
               </p>
               <button
                 className="secondary-action"
                 type="button"
-                onClick={verifyLive}
-                disabled={loading}
+                onClick={() => void verifyLive("10000")}
+                disabled={verificationLoading}
               >
-                {loading
+                {verificationLoading
                   ? "Checking Business Central"
                   : "Run live verification"}
               </button>
-              {error && (
+              {verificationError && (
                 <p className="error-message" role="alert">
-                  {error}
+                  {verificationError}
                 </p>
               )}
             </div>
           ) : (
             <div className="evidence-content reveal">
               <div className="primary-metric">
-                <span className="metric-label">Open order value</span>
+                <span className="metric-label">
+                  Open order value
+                </span>
                 <strong>
-                  {money(sales?.open_order_value ?? 0, currency)}
+                  {money(
+                    sales?.open_order_value ?? 0,
+                    currency,
+                  )}
                 </strong>
                 <span className="metric-support">
                   {sales?.open_orders ?? 0} open orders,{" "}
@@ -309,13 +513,19 @@ export default function Home() {
                 <div>
                   <span>Quote value</span>
                   <strong>
-                    {money(sales?.open_quote_value ?? 0, currency)}
+                    {money(
+                      sales?.open_quote_value ?? 0,
+                      currency,
+                    )}
                   </strong>
                 </div>
                 <div>
                   <span>Balance due</span>
                   <strong>
-                    {money(customer?.balance_due ?? 0, currency)}
+                    {money(
+                      customer?.balance_due ?? 0,
+                      currency,
+                    )}
                   </strong>
                 </div>
               </div>
@@ -323,11 +533,15 @@ export default function Home() {
               <dl className="evidence-meta">
                 <div>
                   <dt>Source</dt>
-                  <dd>{verification.verification.source_name}</dd>
+                  <dd>
+                    {verification.verification.source_name}
+                  </dd>
                 </div>
                 <div>
                   <dt>Environment</dt>
-                  <dd>{verification.verification.environment}</dd>
+                  <dd>
+                    {verification.verification.environment}
+                  </dd>
                 </div>
                 <div>
                   <dt>Retrieved</dt>
@@ -347,35 +561,48 @@ export default function Home() {
                 <button
                   className="secondary-action"
                   type="button"
-                  onClick={verifyLive}
-                  disabled={loading}
+                  onClick={() =>
+                    void verifyLive(currentVerifyQuery)
+                  }
+                  disabled={verificationLoading}
                 >
-                  {loading ? "Verifying" : "Verify again"}
+                  {verificationLoading
+                    ? "Verifying"
+                    : "Verify again"}
                 </button>
                 <span>
-                  Every verification triggers a new Business Central API request.
+                  Voice tool calls trigger the same independent
+                  verification path automatically.
                 </span>
               </div>
 
-              {error && (
+              {verificationError && (
                 <p className="error-message" role="alert">
-                  {error}
+                  {verificationError}
                 </p>
               )}
             </div>
           )}
         </section>
 
-        <aside className="activity-panel" aria-labelledby="activity-title">
+        <aside
+          className="activity-panel"
+          aria-labelledby="activity-title"
+        >
           <div>
             <p className="section-kicker" id="activity-title">
               Live activity
             </p>
             <div
-              className={"activity-status activity-" + activity.state}
+              className={
+                "activity-status activity-" + activity.state
+              }
               aria-live="polite"
             >
-              <span className="activity-indicator" aria-hidden="true" />
+              <span
+                className="activity-indicator"
+                aria-hidden="true"
+              />
               <div>
                 <strong>{activity.label}</strong>
                 <p>{activity.detail}</p>
@@ -383,37 +610,58 @@ export default function Home() {
             </div>
           </div>
 
-          <ol className="flow-list" aria-label="VOICE2ERP request flow">
-            <FlowStep number="01" label="Listen" detail="Natural voice request" />
+          <ol
+            className="flow-list"
+            aria-label="VOICE2ERP request flow"
+          >
+            <FlowStep
+              number="01"
+              label="Listen"
+              detail="Natural voice request"
+              active={voiceState === "listening"}
+            />
             <FlowStep
               number="02"
               label="Understand"
               detail="Customer and intent"
+              active={voiceState === "understanding"}
             />
             <FlowStep
               number="03"
               label="Query ERP"
               detail="Business Central API"
-              active={loading}
+              active={
+                voiceState === "querying" ||
+                verificationLoading
+              }
             />
             <FlowStep
               number="04"
               label="Verify"
               detail="Independent source proof"
+              active={
+                verificationLoading &&
+                voiceState === "querying"
+              }
               complete={Boolean(verification)}
             />
           </ol>
         </aside>
 
-        <section className="orders-panel" aria-labelledby="orders-title">
+        <section
+          className="orders-panel"
+          aria-labelledby="orders-title"
+        >
           <div className="orders-heading">
             <div>
-              <p className="section-kicker">Business context</p>
+              <p className="section-kicker">
+                Business context
+              </p>
               <h2 id="orders-title">Order signal</h2>
             </div>
             <p>
-              Current operational context from the same verified customer
-              record.
+              Current operational context from the same verified
+              customer record.
             </p>
           </div>
 
@@ -423,14 +671,19 @@ export default function Home() {
               order={sales?.latest_order ?? null}
               currency={currency}
             />
-            <div className="order-divider" aria-hidden="true" />
+            <div
+              className="order-divider"
+              aria-hidden="true"
+            />
             <OrderRecord
               label="Largest order"
               order={sales?.largest_order ?? null}
               currency={currency}
               detail={
                 sales?.largest_order?.lines?.[0]
-                  ? String(sales.largest_order.lines[0].quantity) +
+                  ? String(
+                      sales.largest_order.lines[0].quantity,
+                    ) +
                     " x " +
                     sales.largest_order.lines[0].description
                   : undefined
@@ -463,7 +716,9 @@ function FlowStep({
 
   return (
     <li className={className}>
-      <span className="flow-number">{complete ? "✓" : number}</span>
+      <span className="flow-number">
+        {complete ? "✓" : number}
+      </span>
       <span>
         <strong>{label}</strong>
         <small>{detail}</small>
@@ -492,14 +747,18 @@ function OrderRecord({
             <strong className="mono">{order.number}</strong>
             <span>{order.status}</span>
           </div>
-          <div className="record-value">{money(order.total, currency)}</div>
+          <div className="record-value">
+            {money(order.total, currency)}
+          </div>
           <div className="record-meta">
             <span className="mono">{order.order_date}</span>
             {detail && <span>{detail}</span>}
           </div>
         </>
       ) : (
-        <p className="record-empty">Run verification to load this record.</p>
+        <p className="record-empty">
+          Run verification to load this record.
+        </p>
       )}
     </article>
   );
@@ -507,7 +766,11 @@ function OrderRecord({
 
 function SunIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <circle
         cx="12"
         cy="12"
@@ -527,7 +790,11 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M20 15.2A8.3 8.3 0 0 1 8.8 4a8.4 8.4 0 1 0 11.2 11.2Z"
         stroke="currentColor"
@@ -540,13 +807,36 @@ function MoonIcon() {
 
 function ArrowIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M4 10h11m-4-4 4 4-4 4"
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="6"
+        y="6"
+        width="8"
+        height="8"
+        rx="1.5"
+        fill="currentColor"
       />
     </svg>
   );
