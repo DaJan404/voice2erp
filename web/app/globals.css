@@ -200,6 +200,16 @@ button:disabled {
   transform: scale(0.98);
 }
 
+.theme-icon {
+  display: grid;
+  place-items: center;
+}
+
+:root[data-theme="dark"] .theme-icon-moon,
+:root[data-theme="light"] .theme-icon-sun {
+  display: none;
+}
+
 .icon-button svg {
   width: 18px;
   height: 18px;
