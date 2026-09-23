@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type Theme = "light" | "dark";
 
 type OrderSummary = {
   number: string;
@@ -9,6 +11,17 @@ type OrderSummary = {
   currency: string;
   total: number;
   fully_shipped: boolean;
+};
+
+type LargestOrder = OrderSummary & {
+  lines: Array<{
+    item_number: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    shipped_quantity: number;
+  }>;
 };
 
 type VerificationResponse = {
@@ -39,18 +52,7 @@ type VerificationResponse = {
       open_quotes: number;
       open_quote_value: number;
       latest_order: OrderSummary | null;
-      largest_order:
-        | (OrderSummary & {
-            lines: Array<{
-              item_number: string;
-              description: string;
-              quantity: number;
-              unit_price: number;
-              total: number;
-              shipped_quantity: number;
-            }>;
-          })
-        | null;
+      largest_order: LargestOrder | null;
       recent_orders: OrderSummary[];
     };
   };
@@ -60,38 +62,60 @@ function money(value: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
+function isVerificationResponse(value: unknown): value is VerificationResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  return "status" in value && value.status === "verified";
+}
+
 export default function Home() {
+  const [theme, setTheme] = useState<Theme>("dark");
   const [verification, setVerification] =
     useState<VerificationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const current = document.documentElement.dataset.theme;
+    if (current === "light" || current === "dark") {
+      setTheme(current);
+    }
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    window.localStorage.setItem("voice2erp-theme", nextTheme);
+    setTheme(nextTheme);
+  }
 
   async function verifyLive() {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(
-        "/api/verify/customer?query=10000",
-        { cache: "no-store" },
-      );
-
+      const response = await fetch("/api/verify/customer?query=10000", {
+        cache: "no-store",
+      });
       const data: unknown = await response.json();
 
-      if (!response.ok) {
-        throw new Error("Live verification failed.");
+      if (!response.ok || !isVerificationResponse(data)) {
+        throw new Error("Live verification failed. Please try again.");
       }
 
-      setVerification(data as VerificationResponse);
+      setVerification(data);
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Live verification failed.",
+          : "Live verification failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -102,291 +126,431 @@ export default function Home() {
   const sales = verification?.briefing.sales;
   const currency = customer?.currency ?? "USD";
 
+  const activity = useMemo(() => {
+    if (loading) {
+      return {
+        label: "Querying live ERP data",
+        detail: "A fresh server-side request is in progress.",
+        state: "working" as const,
+      };
+    }
+
+    if (verification) {
+      return {
+        label: "ERP evidence matched",
+        detail:
+          "The values shown were fetched independently from Business Central.",
+        state: "verified" as const,
+      };
+    }
+
+    return {
+      label: "Ready for the agent",
+      detail:
+        "The voice flow is validated. Browser voice controls are the next integration step.",
+      state: "idle" as const,
+    };
+  }, [loading, verification]);
+
   return (
-    <main className="min-h-screen bg-[#07090d] text-white">
-      <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-5 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between border-b border-white/8 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
-              <span className="text-sm font-semibold tracking-tight">V2</span>
-            </div>
-            <div>
-              <div className="text-[15px] font-semibold tracking-[-0.02em]">
-                VOICE2ERP
-              </div>
-              <div className="text-xs text-white/38">
-                Talk. Confirm. Execute. Verify.
-              </div>
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="VOICE2ERP home">
+          <span className="brand-mark" aria-hidden="true">
+            V2
+          </span>
+          <span>
+            <strong>VOICE2ERP</strong>
+            <small>Talk. Confirm. Execute. Verify.</small>
+          </span>
+        </a>
+
+        <div className="topbar-actions">
+          <div
+            className="connection-state"
+            aria-label="Business Central connected"
+          >
+            <span className="connection-dot" aria-hidden="true" />
+            <span className="connection-copy">BC live</span>
+          </div>
+
+          <button
+            className="icon-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+            }
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </div>
+      </header>
+
+      <main className="product-grid">
+        <section className="hero-panel" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <p className="section-kicker">Voice-native ERP operations</p>
+            <h1 id="hero-title">
+              Talk to your ERP.
+              <span>Verify every answer.</span>
+            </h1>
+            <p className="hero-subtext">
+              Live Microsoft Business Central data, spoken naturally and
+              verified independently.
+            </p>
+
+            <div className="hero-actions">
+              <button
+                className="primary-action"
+                type="button"
+                onClick={verifyLive}
+                disabled={loading}
+              >
+                {loading ? "Verifying live data" : "Verify live ERP data"}
+                <ArrowIcon />
+              </button>
+              <span className="action-note">
+                Customer 10000, Adatum Corporation
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-1.5 text-xs text-emerald-300">
-            <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
-            Business Central connected
+          <div className="voice-signal" aria-hidden="true">
+            <span style={{ height: "28%" }} />
+            <span style={{ height: "58%" }} />
+            <span style={{ height: "86%" }} />
+            <span style={{ height: "44%" }} />
+            <span style={{ height: "72%" }} />
+            <span style={{ height: "34%" }} />
+            <span style={{ height: "62%" }} />
+            <span style={{ height: "91%" }} />
+            <span style={{ height: "52%" }} />
+            <span style={{ height: "38%" }} />
+            <span style={{ height: "68%" }} />
+            <span style={{ height: "46%" }} />
           </div>
-        </header>
 
-        <section className="grid flex-1 gap-8 py-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
-          <div className="flex min-h-[560px] flex-col justify-between rounded-[32px] border border-white/8 bg-white/[0.025] p-7 sm:p-9">
+          <p className="voice-caption">
+            AssemblyAI voice agent, Cloudflare integration, Business Central
+            source of truth
+          </p>
+        </section>
+
+        <section className="evidence-panel" aria-labelledby="evidence-title">
+          <div className="evidence-heading">
             <div>
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.035] px-3 py-1.5 text-xs text-white/48">
-                <span className="size-1.5 rounded-full bg-white/40" />
-                Voice session ready
-              </div>
-
-              <h1 className="max-w-2xl text-4xl font-medium leading-[1.02] tracking-[-0.05em] sm:text-5xl lg:text-6xl">
-                Speak to your ERP.
-                <span className="block text-white/34">
-                  Verify every answer.
-                </span>
-              </h1>
-
-              <p className="mt-6 max-w-xl text-base leading-7 text-white/45">
-                A voice-first operating layer for Microsoft Dynamics 365
-                Business Central. Live ERP data stays independently
-                verifiable — outside the model response.
+              <p className="section-kicker">Live ERP evidence</p>
+              <h2 id="evidence-title">
+                {customer?.name ?? "Independent verification"}
+              </h2>
+              <p className="evidence-subtitle">
+                {customer
+                  ? "Customer " +
+                    customer.number +
+                    ", " +
+                    customer.city +
+                    ", " +
+                    customer.state
+                  : "Fetch the source record directly from Business Central."}
               </p>
             </div>
 
-            <div className="flex flex-col items-center justify-center py-10">
-              <div className="voice-orb-shell">
-                <div className="voice-orb-ring voice-orb-ring-one" />
-                <div className="voice-orb-ring voice-orb-ring-two" />
-                <div className="voice-orb">
-                  <div className="voice-orb-core" />
-                </div>
-              </div>
-
-              <div className="mt-8 text-center">
-                <div className="text-sm font-medium text-white/76">
-                  Voice layer next
-                </div>
-                <div className="mt-1 text-xs text-white/32">
-                  AssemblyAI agent is already validated end-to-end
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 border-t border-white/8 pt-5 text-xs">
-              <div>
-                <div className="text-white/28">Voice</div>
-                <div className="mt-1 text-white/65">AssemblyAI</div>
-              </div>
-              <div>
-                <div className="text-white/28">Integration</div>
-                <div className="mt-1 text-white/65">Cloudflare</div>
-              </div>
-              <div>
-                <div className="text-white/28">ERP</div>
-                <div className="mt-1 text-white/65">Business Central</div>
-              </div>
+            <div
+              className={
+                "verification-state" + (verification ? " is-verified" : "")
+              }
+              aria-live="polite"
+            >
+              <span aria-hidden="true">{verification ? "✓" : "○"}</span>
+              {verification ? "Verified live" : "Not verified yet"}
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[32px] border border-white/8 bg-[#0c0f14] p-6 shadow-2xl shadow-black/30 sm:p-8">
-            <div className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/45 to-transparent" />
-
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.17em] text-white/36">
-                  <span className="size-1.5 rounded-full bg-cyan-300" />
-                  Live ERP Evidence
-                </div>
-                <h2 className="mt-3 text-2xl font-medium tracking-[-0.035em]">
-                  {customer?.name ?? "Business Central verification"}
-                </h2>
-                <p className="mt-1 text-sm text-white/36">
-                  {customer
-                    ? `Customer ${customer.number} · ${customer.city}, ${customer.state}`
-                    : "Fetch directly from the hackathon Business Central tenant."}
+          {!verification ? (
+            <div className="evidence-empty">
+              <div className="evidence-empty-rule" aria-hidden="true" />
+              <p>
+                The AI response is not the proof. This view performs a separate,
+                uncached Business Central request and displays the result as
+                source evidence.
+              </p>
+              <button
+                className="secondary-action"
+                type="button"
+                onClick={verifyLive}
+                disabled={loading}
+              >
+                {loading
+                  ? "Checking Business Central"
+                  : "Run live verification"}
+              </button>
+              {error && (
+                <p className="error-message" role="alert">
+                  {error}
                 </p>
-              </div>
-
-              {verification && (
-                <div className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-300">
-                  ✓ Verified live
-                </div>
               )}
             </div>
+          ) : (
+            <div className="evidence-content reveal">
+              <div className="primary-metric">
+                <span className="metric-label">Open order value</span>
+                <strong>
+                  {money(sales?.open_order_value ?? 0, currency)}
+                </strong>
+                <span className="metric-support">
+                  {sales?.open_orders ?? 0} open orders,{" "}
+                  {sales?.open_quotes ?? 0} open quotes
+                </span>
+              </div>
 
-            {!verification ? (
-              <div className="flex min-h-[430px] flex-col items-center justify-center text-center">
-                <div className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.035]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="size-6 text-white/56"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 7.5 12 3l8 4.5M4 7.5V17l8 4 8-4V7.5M4 7.5l8 4.5m8-4.5L12 12m0 9v-9"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+              <div
+                className="secondary-metrics"
+                aria-label="Business Central metrics"
+              >
+                <div>
+                  <span>Quote value</span>
+                  <strong>
+                    {money(sales?.open_quote_value ?? 0, currency)}
+                  </strong>
                 </div>
-
-                <div className="max-w-sm text-lg font-medium tracking-[-0.025em]">
-                  Prove the data without trusting the AI.
+                <div>
+                  <span>Balance due</span>
+                  <strong>
+                    {money(customer?.balance_due ?? 0, currency)}
+                  </strong>
                 </div>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-white/36">
-                  This triggers a new server-side request through the
-                  VOICE2ERP verification path directly into Business Central.
-                </p>
+              </div>
 
+              <dl className="evidence-meta">
+                <div>
+                  <dt>Source</dt>
+                  <dd>{verification.verification.source_name}</dd>
+                </div>
+                <div>
+                  <dt>Environment</dt>
+                  <dd>{verification.verification.environment}</dd>
+                </div>
+                <div>
+                  <dt>Retrieved</dt>
+                  <dd>
+                    {new Date(
+                      verification.verification.retrieved_at,
+                    ).toLocaleString()}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Cache</dt>
+                  <dd>Disabled, fresh request</dd>
+                </div>
+              </dl>
+
+              <div className="evidence-footer">
                 <button
+                  className="secondary-action"
                   type="button"
                   onClick={verifyLive}
                   disabled={loading}
-                  className="mt-7 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/88 disabled:cursor-wait disabled:opacity-60"
                 >
-                  {loading ? "Verifying…" : "Verify Adatum live"}
+                  {loading ? "Verifying" : "Verify again"}
                 </button>
-
-                {error && (
-                  <p className="mt-4 text-sm text-red-300">{error}</p>
-                )}
+                <span>
+                  Every verification triggers a new Business Central API request.
+                </span>
               </div>
-            ) : (
-              <div className="mt-8">
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/8 bg-white/8 sm:grid-cols-4">
-                  <Metric
-                    label="Open orders"
-                    value={String(sales?.open_orders ?? 0)}
-                  />
-                  <Metric
-                    label="Order value"
-                    value={money(sales?.open_order_value ?? 0, currency)}
-                  />
-                  <Metric
-                    label="Open quotes"
-                    value={String(sales?.open_quotes ?? 0)}
-                  />
-                  <Metric
-                    label="Quote value"
-                    value={money(sales?.open_quote_value ?? 0, currency)}
-                  />
-                </div>
 
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <OrderCard
-                    eyebrow="Latest order"
-                    order={sales?.latest_order ?? null}
-                    currency={currency}
-                  />
-                  <OrderCard
-                    eyebrow="Largest order"
-                    order={sales?.largest_order ?? null}
-                    currency={currency}
-                  />
-                </div>
+              {error && (
+                <p className="error-message" role="alert">
+                  {error}
+                </p>
+              )}
+            </div>
+          )}
+        </section>
 
-                <div className="mt-6 border-t border-white/8 pt-5">
-                  <div className="grid gap-4 text-xs sm:grid-cols-2">
-                    <EvidenceRow
-                      label="Source"
-                      value={verification.verification.source_name}
-                    />
-                    <EvidenceRow
-                      label="Environment"
-                      value={verification.verification.environment}
-                    />
-                    <EvidenceRow
-                      label="Retrieved"
-                      value={new Date(
-                        verification.verification.retrieved_at,
-                      ).toLocaleString()}
-                    />
-                    <EvidenceRow
-                      label="Caching"
-                      value="Disabled · fresh request"
-                    />
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={verifyLive}
-                      disabled={loading}
-                      className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-white/88 disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {loading ? "Verifying…" : "Verify again"}
-                    </button>
-                    <span className="text-xs text-white/28">
-                      Fresh Business Central API request on every verification
-                    </span>
-                  </div>
-
-                  {error && (
-                    <p className="mt-4 text-sm text-red-300">{error}</p>
-                  )}
-                </div>
+        <aside className="activity-panel" aria-labelledby="activity-title">
+          <div>
+            <p className="section-kicker" id="activity-title">
+              Live activity
+            </p>
+            <div
+              className={"activity-status activity-" + activity.state}
+              aria-live="polite"
+            >
+              <span className="activity-indicator" aria-hidden="true" />
+              <div>
+                <strong>{activity.label}</strong>
+                <p>{activity.detail}</p>
               </div>
-            )}
+            </div>
+          </div>
+
+          <ol className="flow-list" aria-label="VOICE2ERP request flow">
+            <FlowStep number="01" label="Listen" detail="Natural voice request" />
+            <FlowStep
+              number="02"
+              label="Understand"
+              detail="Customer and intent"
+            />
+            <FlowStep
+              number="03"
+              label="Query ERP"
+              detail="Business Central API"
+              active={loading}
+            />
+            <FlowStep
+              number="04"
+              label="Verify"
+              detail="Independent source proof"
+              complete={Boolean(verification)}
+            />
+          </ol>
+        </aside>
+
+        <section className="orders-panel" aria-labelledby="orders-title">
+          <div className="orders-heading">
+            <div>
+              <p className="section-kicker">Business context</p>
+              <h2 id="orders-title">Order signal</h2>
+            </div>
+            <p>
+              Current operational context from the same verified customer
+              record.
+            </p>
+          </div>
+
+          <div className="order-composition">
+            <OrderRecord
+              label="Latest order"
+              order={sales?.latest_order ?? null}
+              currency={currency}
+            />
+            <div className="order-divider" aria-hidden="true" />
+            <OrderRecord
+              label="Largest order"
+              order={sales?.largest_order ?? null}
+              currency={currency}
+              detail={
+                sales?.largest_order?.lines?.[0]
+                  ? String(sales.largest_order.lines[0].quantity) +
+                    " x " +
+                    sales.largest_order.lines[0].description
+                  : undefined
+              }
+            />
           </div>
         </section>
-      </div>
-    </main>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-[#0c0f14] px-4 py-5">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-white/28">
-        {label}
-      </div>
-      <div className="mt-2 text-xl font-medium tracking-[-0.035em] text-white/88">
-        {value}
-      </div>
+      </main>
     </div>
   );
 }
 
-function OrderCard({
-  eyebrow,
+function FlowStep({
+  number,
+  label,
+  detail,
+  active = false,
+  complete = false,
+}: {
+  number: string;
+  label: string;
+  detail: string;
+  active?: boolean;
+  complete?: boolean;
+}) {
+  const className =
+    "flow-step" +
+    (active ? " is-active" : "") +
+    (complete ? " is-complete" : "");
+
+  return (
+    <li className={className}>
+      <span className="flow-number">{complete ? "✓" : number}</span>
+      <span>
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </span>
+    </li>
+  );
+}
+
+function OrderRecord({
+  label,
   order,
   currency,
+  detail,
 }: {
-  eyebrow: string;
+  label: string;
   order: OrderSummary | null;
   currency: string;
+  detail?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-5">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-white/28">
-        {eyebrow}
-      </div>
+    <article className="order-record">
+      <span className="record-label">{label}</span>
       {order ? (
         <>
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="font-mono text-sm text-white/78">
-              {order.number}
-            </div>
-            <div className="rounded-full border border-white/8 px-2 py-1 text-[10px] text-white/38">
-              {order.status}
-            </div>
+          <div className="record-topline">
+            <strong className="mono">{order.number}</strong>
+            <span>{order.status}</span>
           </div>
-          <div className="mt-5 text-2xl font-medium tracking-[-0.04em]">
-            {money(order.total, currency)}
-          </div>
-          <div className="mt-1 text-xs text-white/30">
-            {order.order_date}
+          <div className="record-value">{money(order.total, currency)}</div>
+          <div className="record-meta">
+            <span className="mono">{order.order_date}</span>
+            {detail && <span>{detail}</span>}
           </div>
         </>
       ) : (
-        <div className="mt-3 text-sm text-white/30">No order available</div>
+        <p className="record-empty">Run verification to load this record.</p>
       )}
-    </div>
+    </article>
   );
 }
 
-function EvidenceRow({ label, value }: { label: string; value: string }) {
+function SunIcon() {
   return (
-    <div>
-      <div className="text-white/26">{label}</div>
-      <div className="mt-1 text-white/58">{value}</div>
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle
+        cx="12"
+        cy="12"
+        r="3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M12 2.5v2M12 19.5v2M4.5 12h-2M21.5 12h-2M5.3 5.3 3.9 3.9M20.1 20.1l-1.4-1.4M18.7 5.3l1.4-1.4M3.9 20.1l1.4-1.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 15.2A8.3 8.3 0 0 1 8.8 4a8.4 8.4 0 1 0 11.2 11.2Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M4 10h11m-4-4 4 4-4 4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
