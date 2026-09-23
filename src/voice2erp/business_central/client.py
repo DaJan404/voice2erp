@@ -18,6 +18,10 @@ from voice2erp.business_central.models import (
     SalesQuote,
     SalesQuoteLine,
 )
+from voice2erp.business_central.search import (
+    item_matches_query,
+    primary_search_term,
+)
 
 
 class FetchResponseLike(Protocol):
@@ -352,7 +356,7 @@ class BusinessCentralClient:
         self,
         query: str,
     ) -> list[Item]:
-        normalized_query = query.strip()
+        normalized_query = " ".join(query.split())
 
         if not normalized_query:
             return []
@@ -362,14 +366,19 @@ class BusinessCentralClient:
         if exact_item is not None:
             return [exact_item]
 
-        safe_query = self._odata_string(normalized_query.lower())
+        primary_term = primary_search_term(normalized_query)
+
+        if not primary_term:
+            return []
+
+        safe_query = self._odata_string(primary_term)
 
         payload = await self._get(
             "items",
             {
                 "$filter": f"contains(tolower(displayName),'{safe_query}')",
                 "$schemaversion": "2.1",
-                "$top": "10",
+                "$top": "100",
             },
         )
 
@@ -378,7 +387,13 @@ class BusinessCentralClient:
         if not isinstance(values, list):
             return []
 
-        return cast(list[Item], values)
+        items = cast(list[Item], values)
+
+        return [
+            item
+            for item in items
+            if item_matches_query(item, normalized_query)
+        ]
 
     async def get_sales_orders(
         self,
