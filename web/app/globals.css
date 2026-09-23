@@ -222,6 +222,7 @@ button:disabled {
     "hero evidence"
     "activity evidence"
     "orders orders"
+    "quote quote"
     "history history";
   gap: 18px;
   padding: 24px 0 36px;
@@ -231,6 +232,7 @@ button:disabled {
 .evidence-panel,
 .activity-panel,
 .orders-panel,
+.quote-panel,
 .history-panel {
   min-width: 0;
   border: 1px solid var(--border);
@@ -1183,6 +1185,297 @@ button:disabled {
   white-space: nowrap;
 }
 
+.quote-panel {
+  grid-area: quote;
+  padding: 28px;
+  border-radius: 22px;
+  border-color: color-mix(in oklch, var(--brand) 28%, var(--border));
+}
+
+.quote-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.quote-heading h2 {
+  margin: 0;
+  font-size: clamp(26px, 2.6vw, 38px);
+  font-weight: 620;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.quote-heading p:last-child {
+  max-width: 66ch;
+  margin: 10px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.quote-state {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+.quote-state.is-verified {
+  border-color: color-mix(in oklch, var(--verified) 35%, var(--border));
+  background: var(--verified-soft);
+  color: color-mix(in oklch, var(--verified) 82%, var(--text));
+}
+
+.quote-composition {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.65fr) minmax(0, 1.35fr);
+  gap: 0 34px;
+}
+
+.quote-party,
+.quote-line-preview {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.quote-party {
+  border-right: 1px solid var(--border);
+  padding-right: 34px;
+}
+
+.quote-party strong,
+.quote-party small {
+  display: block;
+}
+
+.quote-party strong {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+}
+
+.quote-party small {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.quote-line-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 28px;
+}
+
+.quote-line-preview > .record-label {
+  grid-column: 1 / -1;
+}
+
+.quote-line-preview > div:nth-child(2) strong,
+.quote-line-preview > div:nth-child(2) span,
+.quote-line-preview > div:last-child span,
+.quote-line-preview > div:last-child strong {
+  display: block;
+}
+
+.quote-line-preview > div:nth-child(2) strong {
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.quote-line-preview > div:nth-child(2) span {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.quote-line-preview > div:last-child {
+  text-align: right;
+}
+
+.quote-line-preview > div:last-child span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.quote-line-preview > div:last-child strong {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 610;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-reference {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 170px minmax(180px, auto) minmax(0, 1fr);
+  gap: 18px 30px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.quote-reference > span {
+  color: var(--text-muted);
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quote-reference > strong {
+  font-size: 26px;
+  font-weight: 610;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-reference p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.quote-confirmation {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  padding-top: 22px;
+}
+
+.quote-confirmation > div:first-child strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.quote-confirmation > div:first-child p {
+  max-width: 58ch;
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.quote-confirmation > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quote-cancel,
+.quote-confirm,
+.quote-result button {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 640;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.quote-cancel,
+.quote-result button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.quote-confirm {
+  border: 1px solid color-mix(in oklch, var(--brand) 62%, var(--text));
+  background: var(--text);
+  color: var(--bg);
+}
+
+.quote-cancel:hover,
+.quote-confirm:hover,
+.quote-result button:hover {
+  transform: translateY(-1px);
+}
+
+.quote-cancel:active,
+.quote-confirm:active,
+.quote-result button:active {
+  transform: scale(0.98);
+}
+
+.quote-cancel:disabled,
+.quote-confirm:disabled {
+  opacity: 0.52;
+}
+
+.quote-result {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 24px;
+  align-items: center;
+  padding-top: 22px;
+}
+
+.quote-result > div strong,
+.quote-result > div small,
+.quote-result > div span {
+  display: block;
+}
+
+.quote-result > div:first-child strong {
+  margin-top: 7px;
+  font-size: 18px;
+  font-weight: 620;
+}
+
+.quote-result > div:nth-child(2) {
+  text-align: right;
+}
+
+.quote-result > div:nth-child(2) span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.quote-result > div:nth-child(2) strong {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 610;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-result small {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.quote-placeholder {
+  margin: 0;
+  padding: 28px 0 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.history-action > div > span {
+  color: var(--brand);
+}
+
 .history-panel {
   grid-area: history;
   padding: 28px;
@@ -1368,6 +1661,7 @@ button:disabled {
       "activity"
       "evidence"
       "orders"
+      "quote"
       "history";
   }
 
@@ -1375,6 +1669,7 @@ button:disabled {
   .evidence-panel,
   .activity-panel,
   .orders-panel,
+  .quote-panel,
   .history-panel {
     border-radius: 18px;
   }
@@ -1436,7 +1731,9 @@ button:disabled {
   .hero-panel,
   .evidence-panel,
   .activity-panel,
-  .orders-panel {
+  .orders-panel,
+  .quote-panel,
+  .history-panel {
     padding: 22px;
     border-radius: 16px;
   }
@@ -1528,6 +1825,55 @@ button:disabled {
     width: 100%;
   }
 
+  .quote-heading,
+  .history-heading {
+    flex-direction: column;
+  }
+
+  .quote-composition {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-party {
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .quote-line-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-line-preview > div:last-child {
+    text-align: left;
+  }
+
+  .quote-reference {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .quote-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .quote-confirmation > div:last-child {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quote-result {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-result > div:nth-child(2) {
+    text-align: left;
+  }
+
+  .quote-result button {
+    width: 100%;
+  }
+
   .history-heading {
     flex-direction: column;
   }
@@ -1590,6 +1936,9 @@ button:disabled {
   .customer-lookup input,
   .customer-lookup button,
   .lookup-resolution li button,
+  .quote-cancel,
+  .quote-confirm,
+  .quote-result button,
   .history-actions button,
   .history-list button {
     transition: none;
