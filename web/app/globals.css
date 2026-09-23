@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07090d;
+  --foreground: #f5f7fa;
 }
 
 @theme inline {
@@ -12,15 +12,96 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% 5%, rgba(47, 100, 130, 0.11), transparent 32rem),
+    radial-gradient(circle at 85% 70%, rgba(27, 72, 94, 0.08), transparent 34rem),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.voice-orb-shell {
+  position: relative;
+  display: grid;
+  width: 184px;
+  height: 184px;
+  place-items: center;
+}
+
+.voice-orb {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 92px;
+  height: 92px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 40% 32%, rgba(186, 230, 253, 0.17), transparent 25%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 22px 70px rgba(0, 0, 0, 0.36);
+}
+
+.voice-orb-core {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: rgba(186, 230, 253, 0.88);
+  box-shadow:
+    0 0 25px rgba(125, 211, 252, 0.5),
+    0 0 60px rgba(125, 211, 252, 0.18);
+}
+
+.voice-orb-ring {
+  position: absolute;
+  border: 1px solid rgba(186, 230, 253, 0.08);
+  border-radius: 9999px;
+}
+
+.voice-orb-ring-one {
+  width: 130px;
+  height: 130px;
+  animation: orb-pulse 3.8s ease-in-out infinite;
+}
+
+.voice-orb-ring-two {
+  width: 176px;
+  height: 176px;
+  animation: orb-pulse 3.8s ease-in-out 0.7s infinite;
+}
+
+@keyframes orb-pulse {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-orb-ring {
+    animation: none;
+  }
 }
