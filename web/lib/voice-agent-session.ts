@@ -310,6 +310,10 @@ export class VoiceAgentSession {
       });
       const tokenData: unknown = await tokenResponse.json();
 
+      if (this.manuallyStopped) {
+        return;
+      }
+
       if (!tokenResponse.ok || !isVoiceTokenResponse(tokenData)) {
         throw new Error("Could not create a voice session.");
       }
@@ -341,6 +345,11 @@ export class VoiceAgentSession {
           autoGainControl: false,
         },
       });
+
+      if (this.manuallyStopped) {
+        this.cleanupMedia();
+        return;
+      }
 
       const capture = await addWorklet(
         this.captureContext,
@@ -567,6 +576,7 @@ export class VoiceAgentSession {
   }
 
   private fail(message: string) {
+    this.manuallyStopped = true;
     this.ready = false;
     this.playback?.port.postMessage("stop");
     this.cleanupMedia();
