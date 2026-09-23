@@ -3,7 +3,7 @@ import math
 from datetime import UTC, datetime
 from typing import Literal, Protocol, TypedDict
 
-from voice2erp.business_central.client import BusinessCentralError
+from voice2erp.business_central.errors import BusinessCentralError
 from voice2erp.business_central.models import (
     Contact,
     Customer,
