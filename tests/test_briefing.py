@@ -9,36 +9,23 @@ class FakeBusinessCentral:
             return [self._customer()]
         return []
 
-    async def search_contact_information(self, query: str):
+    async def search_contacts(self, query: str):
         if query.lower() == "helen ray":
             return [
                 {
-                    "contactId": "contact-1",
-                    "contactNumber": "CT000001",
-                    "contactName": "Helen Ray",
-                    "contactType": "Person",
-                    "relatedId": "customer-1",
-                    "relatedType": "Customer",
+                    "id": "contact-1",
+                    "number": "CT000001",
+                    "type": "Person",
+                    "displayName": "Helen Ray",
+                    "jobTitle": "Purchasing Manager",
+                    "companyNumber": "CT000010",
+                    "companyName": "Trey Research",
+                    "phoneNumber": "+1 425-555-0100",
+                    "mobilePhoneNumber": "",
+                    "email": "helen.ray@contoso.com",
                 }
             ]
         return []
-
-    async def get_contact(self, contact_id: str):
-        if contact_id != "contact-1":
-            return None
-
-        return {
-            "id": "contact-1",
-            "number": "CT000001",
-            "type": "Person",
-            "displayName": "Helen Ray",
-            "jobTitle": "Purchasing Manager",
-            "companyNumber": "20000",
-            "companyName": "Trey Research",
-            "phoneNumber": "+1 425-555-0100",
-            "mobilePhoneNumber": "",
-            "email": "helen.ray@contoso.com",
-        }
 
     async def get_customer_by_id(self, customer_id: str):
         return self._customer() if customer_id == "customer-1" else None
