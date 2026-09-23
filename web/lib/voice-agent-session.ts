@@ -30,11 +30,11 @@ type VoiceTokenResponse = {
 
 const WIRE_RATE = 24_000;
 
-const CAPTURE_WORKLET = \`
+const CAPTURE_WORKLET = `
 class CaptureProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this._ratio = sampleRate / \${WIRE_RATE};
+    this._ratio = sampleRate / ${WIRE_RATE};
     this._pos = 0;
     this._prev = 0;
     this._src = null;
@@ -98,9 +98,9 @@ class CaptureProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor("voice2erp-capture", CaptureProcessor);
-\`;
+`;
 
-const PLAYBACK_WORKLET = \`
+const PLAYBACK_WORKLET = `
 class PlaybackProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -108,7 +108,7 @@ class PlaybackProcessor extends AudioWorkletProcessor {
     this._writePos = 0;
     this._readPos = 0;
     this._available = 0;
-    this._step = \${WIRE_RATE} / sampleRate;
+    this._step = ${WIRE_RATE} / sampleRate;
     this._resamplePosition = 0;
     this._resamplePrevious = 0;
     this._drained = false;
@@ -192,7 +192,7 @@ class PlaybackProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor("voice2erp-playback", PlaybackProcessor);
-\`;
+`;
 
 function blobUrl(code: string) {
   return URL.createObjectURL(
@@ -245,7 +245,7 @@ function appendTranscriptDelta(text: string, delta: string) {
   if (!text) return delta;
   if (/^\s/.test(delta) || /\s$/.test(text)) return text + delta;
   if (/^[.,!?;:%°)\]}…'"’”]/.test(delta)) return text + delta;
-  if (/[([{$\\-/'"‘“]$/.test(text)) return text + delta;
+  if (/[([{$\-\/'"‘“]$/.test(text)) return text + delta;
   return text + " " + delta;
 }
 
