@@ -9,7 +9,6 @@ from workers import fetch
 
 from voice2erp.business_central.models import (
     Contact,
-    ContactInformation,
     Customer,
     SalesInvoice,
     SalesOrder,
@@ -213,18 +212,23 @@ class BusinessCentralClient:
 
         return cast(list[Customer], values)
 
-    async def search_contact_information(
+    async def search_contacts(
         self,
         query: str,
-    ) -> list[ContactInformation]:
+    ) -> list[Contact]:
         normalized_query = " ".join(query.lower().split())
 
         if not normalized_query:
             return []
 
+        terms = normalized_query.split()
+        primary_term = self._odata_string(terms[0])
+
         payload = await self._get(
-            "contactsInformation",
+            "contacts",
             {
+                "$filter": f"contains(tolower(displayName),'{primary_term}')",
+                "$schemaversion": "2.1",
                 "$top": "100",
             },
         )
@@ -234,40 +238,35 @@ class BusinessCentralClient:
         if not isinstance(values, list):
             return []
 
-        relations = cast(list[ContactInformation], values)
-        customer_people = [
-            relation
-            for relation in relations
-            if relation.get("relatedType") == "Customer"
-            and relation.get("contactType") == "Person"
+        contacts = [
+            contact
+            for contact in cast(list[Contact], values)
+            if contact.get("type") == "Person"
         ]
 
         exact_matches = [
-            relation
-            for relation in customer_people
-            if relation.get("contactName", "").strip().lower() == normalized_query
+            contact
+            for contact in contacts
+            if contact.get("displayName", "").strip().lower() == normalized_query
         ]
 
         if exact_matches:
             return exact_matches
 
-        terms = normalized_query.split()
         return [
-            relation
-            for relation in customer_people
-            if all(term in relation.get("contactName", "").lower() for term in terms)
+            contact
+            for contact in contacts
+            if all(
+                term in " ".join(
+                    (
+                        contact.get("displayName", ""),
+                        contact.get("email", ""),
+                        contact.get("companyName", ""),
+                    )
+                ).lower()
+                for term in terms
+            )
         ]
-
-    async def get_contact(
-        self,
-        contact_id: str,
-    ) -> Contact | None:
-        payload = await self._get(f"contacts({contact_id})")
-
-        if not payload.get("id"):
-            return None
-
-        return cast(Contact, payload)
 
     async def get_sales_orders(
         self,
