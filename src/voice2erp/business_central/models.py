@@ -28,6 +28,19 @@ class Contact(TypedDict):
     email: str
 
 
+class Item(TypedDict):
+    id: str
+    number: str
+    displayName: str
+    displayName2: str
+    type: str
+    blocked: bool
+    inventory: float
+    unitPrice: float
+    priceIncludesTax: bool
+    baseUnitOfMeasureCode: str
+
+
 class SalesOrder(TypedDict):
     id: str
     number: str
@@ -49,6 +62,23 @@ class SalesQuote(TypedDict):
     currencyCode: str
     totalAmountIncludingTax: float
     status: str
+    externalDocumentNumber: NotRequired[str]
+
+
+class SalesQuoteLine(TypedDict):
+    id: str
+    documentId: str
+    sequence: int
+    itemId: str
+    lineType: str
+    lineObjectNumber: str
+    description: str
+    unitOfMeasureCode: str
+    unitPrice: float
+    quantity: float
+    amountExcludingTax: float
+    totalTaxAmount: float
+    amountIncludingTax: float
 
 
 class SalesInvoice(TypedDict):
