@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 from workers import fetch
 
+from voice2erp.business_central.errors import BusinessCentralError
 from voice2erp.business_central.models import (
     Contact,
     Customer,
@@ -24,10 +25,6 @@ class FetchResponseLike(Protocol):
     status: int
 
     async def text(self) -> str: ...
-
-
-class BusinessCentralError(RuntimeError):
-    pass
 
 
 @dataclass(frozen=True, slots=True)
