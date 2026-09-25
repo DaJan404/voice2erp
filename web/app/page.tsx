@@ -625,12 +625,50 @@ export default function Home() {
           " created and independently re-read from Business Central.",
       );
 
+      const verifiedLine = data.lines[0];
+      const spokenCurrency =
+        data.quote.currency || quotePreview.preview.currency || "USD";
+
+      voiceSessionRef.current?.requestReply(
+        [
+          "A human explicitly confirmed the sales quote in the interface.",
+          "Business Central then created the quote and the application independently re-read it.",
+          "Verified quote number:",
+          data.quote.number + ".",
+          "Customer:",
+          data.quote.customer_name +
+            " (" +
+            data.quote.customer_number +
+            ").",
+          verifiedLine
+            ? "Verified line: " +
+              verifiedLine.quantity +
+              " x " +
+              verifiedLine.item_number +
+              " " +
+              verifiedLine.description +
+              "."
+            : "",
+          "Verified total:",
+          String(data.quote.total),
+          spokenCurrency + ".",
+          "Tell the user in one concise sentence that the quote was created and verified in Business Central.",
+          "Do not change or invent any identifier, customer, quantity, amount, currency, or status.",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+
       void verifyLive(data.quote.customer_number);
     } catch (caught) {
       setQuoteError(
         caught instanceof Error
           ? caught.message
           : "Could not create the sales quote.",
+      );
+
+      voiceSessionRef.current?.requestReply(
+        "The user explicitly confirmed the sales quote in the interface, but the Business Central write did not complete successfully. Tell the user in one concise sentence that the quote could not be created. Do not claim that any quote was created or verified.",
       );
     } finally {
       setQuoteExecuting(false);
@@ -643,6 +681,10 @@ export default function Home() {
         "action",
         "Quote cancelled",
         "Prepared sales quote was cancelled before any ERP write.",
+      );
+
+      voiceSessionRef.current?.requestReply(
+        "The prepared sales quote was cancelled by the human before any ERP write. Tell the user in one concise sentence that the quote was cancelled and nothing was written to Business Central.",
       );
     }
 
