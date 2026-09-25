@@ -420,6 +420,30 @@ export class VoiceAgentSession {
     }
   }
 
+  requestReply(instructions: string) {
+    const normalizedInstructions = instructions.trim();
+    const socket = this.socket;
+
+    if (
+      !normalizedInstructions ||
+      !this.ready ||
+      !socket ||
+      socket.readyState !== WebSocket.OPEN
+    ) {
+      return false;
+    }
+
+    socket.send(
+      JSON.stringify({
+        type: "reply.create",
+        instructions: normalizedInstructions,
+      }),
+    );
+    this.callbacks.onStateChange("understanding");
+
+    return true;
+  }
+
   stop(notify = true) {
     this.manuallyStopped = true;
     this.ready = false;
