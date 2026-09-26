@@ -30,3 +30,20 @@ dist/
 .vscode/
 
 docs/architecture/
+src/js-stubs/
+.tooling/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Vercel
+.vercel/

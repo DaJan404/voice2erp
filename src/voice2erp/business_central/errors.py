@@ -1,0 +1,2 @@
+class BusinessCentralError(RuntimeError):
+    pass

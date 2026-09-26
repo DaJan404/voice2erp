@@ -1,10 +1,22 @@
 {
     "name": "voice2erp",
-    "main": "src/voice2erp/main.py",
+    "main": "src/worker.py",
     "compatibility_date": "2026-09-03",
     "compatibility_flags": [
         "python_workers"
     ],
     "workers_dev": true,
-    "preview_urls": false
+    "preview_urls": false,
+    "secrets": {
+        "required": [
+            "VOICE2ERP_TOOL_TOKEN",
+            "VOICE2ERP_VERIFY_TOKEN",
+            "VOICE2ERP_EXECUTE_TOKEN",
+            "BC_TENANT_ID",
+            "BC_CLIENT_ID",
+            "BC_CLIENT_SECRET",
+            "BC_ENVIRONMENT",
+            "BC_COMPANY_ID"
+        ]
+    }
 }

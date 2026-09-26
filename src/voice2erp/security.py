@@ -1,7 +1,13 @@
 import hmac
+from typing import Literal
+
+type TokenValidationError = Literal[401, 503]
 
 
-def validate_tool_token(expected_token, provided_token):
+def validate_tool_token(
+    expected_token: str | None,
+    provided_token: str | None,
+) -> TokenValidationError | None:
     if not isinstance(expected_token, str) or not expected_token.strip():
         return 503
 
