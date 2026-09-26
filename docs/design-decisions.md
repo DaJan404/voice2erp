@@ -17,11 +17,11 @@ The implementation establishes the choices below. The rationale is an engineerin
 | Request marker | `externalDocumentNumber` lookup and reuse | Supports ordinary sequential retries; lacks atomic concurrency protection |
 | ERP secrets outside browser | Worker configuration and Next.js proxies | Limits credential exposure; does not itself provide end-user authorization |
 
-## FUTURE: “Try the demo” panel
+## Demo discoverability panel
 
-A small public-web panel could show supported demo customers, contacts, products, copyable prompts, and an ambiguity example. It would contain discoverability metadata only. It must not feed hard-coded balances, sales values, invoice evidence, prices, or quote results into the voice agent. All operational data must continue to come from Business Central.
+The public web app includes a **Try the demo** panel with stable demo customers, the Helen Ray contact relationship, supported products, copyable prompts, and the ambiguity scenario. It contains discoverability metadata only.
 
-This panel is **not implemented** by this documentation task. The current equivalent is the [demo catalog](demo-data.md).
+The panel does **not** feed balances, sales values, invoice evidence, prices, quote results, or fixed ERP responses into the voice agent. Operational data continues to resolve from Business Central at runtime. The same identities and scenarios are documented in the [demo catalog](demo-data.md).
 
 ## Other future work
 
