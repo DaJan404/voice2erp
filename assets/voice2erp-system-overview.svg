@@ -326,9 +326,9 @@ rect.c-bg-rect { fill: var(--bg); }
         <path data-edge-from="confirm" data-edge-to="vercel" data-edge-label="Human authorizes mutation" data-edge-key="4" data-edge-id="confirm-vercel" data-composition-points="590,361;590,437" d="M 590 361 L 590 437" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
         <path data-edge-from="vercel" data-edge-to="worker" data-edge-label="EXECUTE" data-edge-key="5" data-edge-id="vercel-worker" data-composition-points="445,466;335,466" d="M 445 466 L 335 466" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
         <path data-edge-from="client" data-edge-to="entra" data-edge-label="OAuth" data-edge-key="6" data-edge-id="client-entra" data-composition-points="335,635;445,635" d="M 335 635 L 445 635" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="client" data-edge-to="rest" data-edge-label="Direct REST + OData" data-edge-key="7" data-edge-id="client-rest" data-composition-points="190,659;190,790" d="M 190 659 L 190 790" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rest" data-edge-to="write" data-edge-label="After confirmation" data-edge-key="8" data-edge-id="rest-write" data-composition-points="335,814;445,814" d="M 335 814 L 445 814" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="write" data-edge-to="result" data-edge-label="Application verifies" data-edge-key="9" data-edge-id="write-result" data-composition-points="590,848;590,906" d="M 590 848 L 590 906" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="client" data-edge-to="rest" data-edge-label="Worker writes via REST" data-edge-key="7" data-edge-id="client-rest" data-composition-points="190,659;190,790" d="M 190 659 L 190 790" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="rest" data-edge-to="write" data-edge-label="BC response" data-edge-key="8" data-edge-id="rest-write" data-composition-points="335,814;445,814" d="M 335 814 L 445 814" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="write" data-edge-to="result" data-edge-label="Verified UI / speech" data-edge-key="9" data-edge-id="write-result" data-composition-points="590,848;590,906" d="M 590 848 L 590 906" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
 
         <!-- Components -->
         <g id="node-person" data-node-id="person" data-node-label="Salesperson" tabindex="0" role="button" aria-label="Focus Salesperson, Architecture component" aria-pressed="false" data-node-kind="external" data-node-context="Architecture component">
@@ -464,16 +464,15 @@ rect.c-bg-rect { fill: var(--bg); }
         <text x="590" y="649" class="t-muted" font-size="9" text-anchor="middle">Token issuer; no ERP proxy</text>
         </g>
 
-        <g id="node-rest" data-node-id="rest" data-node-label="REST API · authoritative records" tabindex="0" role="button" aria-label="Focus REST API · authoritative records, Customers · contacts · items, DYNAMICS 365 BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="database" data-node-sublabel="Customers · contacts · items" data-node-context="DYNAMICS 365 BUSINESS CENTRAL · SANDBOX">
-          <title>REST API · authoritative records · Customers · contacts · items · DYNAMICS 365 BUSINESS CENTRAL · SANDBOX</title>
+        <g id="node-rest" data-node-id="rest" data-node-label="Business Central write / REST API" tabindex="0" role="button" aria-label="Focus Business Central write / REST API, Worker initiates the confirmed mutation, DYNAMICS 365 BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Worker initiates the confirmed mutation" data-node-context="DYNAMICS 365 BUSINESS CENTRAL · SANDBOX">
+          <title>Business Central write / REST API · Worker initiates the confirmed mutation · DYNAMICS 365 BUSINESS CENTRAL · SANDBOX</title>
           <rect x="45" y="790" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="45" y="790" width="290" height="48" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(51 796) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          <rect x="45" y="790" width="290" height="48" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(51 796) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="190" y="812" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">REST API · authoritative records</text>
-        <text x="190" y="828" class="t-muted" font-size="9" text-anchor="middle">Customers · contacts · items</text>
+          <text data-node-label="" x="190" y="812" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central write / REST API</text>
+        <text x="190" y="828" class="t-muted" font-size="9" text-anchor="middle">Worker initiates the confirmed mutation</text>
         </g>
 
         <g id="node-records" data-node-id="records" data-node-label="Orders · quotes · invoices" tabindex="0" role="button" aria-label="Focus Orders · quotes · invoices, Receivables from invoice evidence, DYNAMICS 365 BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="database" data-node-sublabel="Receivables from invoice evidence" data-node-context="DYNAMICS 365 BUSINESS CENTRAL · SANDBOX">
@@ -499,16 +498,16 @@ rect.c-bg-rect { fill: var(--bg); }
           <text data-node-label="" x="190" y="934" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AL/OData Item Search resolver</text>
         </g>
 
-        <g id="node-write" data-node-id="write" data-node-label="Write → re-read quote + lines" tabindex="0" role="button" aria-label="Focus Write → re-read quote + lines, QuoteService checks returned facts, Architecture component" aria-pressed="false" data-node-kind="security" data-node-sublabel="QuoteService checks returned facts" data-node-context="Architecture component">
-          <title>Write → re-read quote + lines · QuoteService checks returned facts · Architecture component</title>
+        <g id="node-write" data-node-id="write" data-node-label="Worker re-read + verification" tabindex="0" role="button" aria-label="Focus Worker re-read + verification, QuoteService checks quote + lines, Architecture component" aria-pressed="false" data-node-kind="security" data-node-sublabel="QuoteService checks quote + lines" data-node-context="Architecture component">
+          <title>Worker re-read + verification · QuoteService checks quote + lines · Architecture component</title>
           <rect x="445" y="790" width="290" height="58" rx="6" class="c-mask"/>
           <rect x="445" y="790" width="290" height="58" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(451 796) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" x="590" y="817" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Write → re-read quote + lines</text>
-        <text x="590" y="833" class="t-muted" font-size="9" text-anchor="middle">QuoteService checks returned facts</text>
+          <text data-node-label="" x="590" y="817" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Worker re-read + verification</text>
+        <text x="590" y="833" class="t-muted" font-size="9" text-anchor="middle">QuoteService checks quote + lines</text>
         </g>
 
         <g id="node-result" data-node-id="result" data-node-label="Verified result" tabindex="0" role="button" aria-label="Focus Verified result, Visible result; speech if connected, Architecture component" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Visible result; speech if connected" data-node-context="Architecture component">
@@ -551,17 +550,17 @@ rect.c-bg-rect { fill: var(--bg); }
           <rect x="373" y="615" width="34" height="14" rx="3" class="c-mask"/>
           <text x="390" y="625" class="t-security" font-size="8" text-anchor="middle">OAuth</text>
         </g>
-        <g data-edge-from="client" data-edge-to="rest" data-edge-label="Direct REST + OData" data-edge-key="7" data-edge-id="client-rest">
-          <rect x="139.4" y="715" width="101.2" height="14" rx="3" class="c-mask"/>
-          <text x="190" y="725" class="t-muted" font-size="8" text-anchor="middle">Direct REST + OData</text>
+        <g data-edge-from="client" data-edge-to="rest" data-edge-label="Worker writes via REST" data-edge-key="7" data-edge-id="client-rest">
+          <rect x="132.2" y="715" width="115.6" height="14" rx="3" class="c-mask"/>
+          <text x="190" y="725" class="t-muted" font-size="8" text-anchor="middle">Worker writes via REST</text>
         </g>
-        <g data-edge-from="rest" data-edge-to="write" data-edge-label="After confirmation" data-edge-key="8" data-edge-id="rest-write">
-          <rect x="341.8" y="794" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="390" y="804" class="t-security" font-size="8" text-anchor="middle">After confirmation</text>
+        <g data-edge-from="rest" data-edge-to="write" data-edge-label="BC response" data-edge-key="8" data-edge-id="rest-write">
+          <rect x="358.6" y="794" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="390" y="804" class="t-security" font-size="8" text-anchor="middle">BC response</text>
         </g>
-        <g data-edge-from="write" data-edge-to="result" data-edge-label="Application verifies" data-edge-key="9" data-edge-id="write-result">
+        <g data-edge-from="write" data-edge-to="result" data-edge-label="Verified UI / speech" data-edge-key="9" data-edge-id="write-result">
           <rect x="537" y="868" width="106" height="14" rx="3" class="c-mask"/>
-          <text x="590" y="878" class="t-security" font-size="8" text-anchor="middle">Application verifies</text>
+          <text x="590" y="878" class="t-security" font-size="8" text-anchor="middle">Verified UI / speech</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->

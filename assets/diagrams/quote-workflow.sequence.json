@@ -2,13 +2,13 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "VOICE2ERP · Quote preparation and execution",
+    "title": "VOICE2ERP \u00b7 Quote preparation and execution",
     "quality_profile": "showcase",
     "locale": "en",
     "column_fit": "spread",
     "viewBox": [
       820,
-      1242
+      1278
     ],
     "legend": {
       "mode": "hidden"
@@ -84,7 +84,7 @@
       "from": "voice",
       "to": "worker",
       "y": 369,
-      "label": "prepare_sales_quote · NO ERP MUTATION",
+      "label": "prepare_sales_quote \u00b7 NO ERP MUTATION",
       "variant": "emphasis"
     },
     {
@@ -92,7 +92,7 @@
       "from": "worker",
       "to": "voice",
       "y": 405,
-      "label": "Read-only preview · no signed token",
+      "label": "Read-only preview \u00b7 no signed token",
       "variant": "return"
     },
     {
@@ -140,7 +140,7 @@
       "from": "human",
       "to": "browser",
       "y": 671,
-      "label": "HUMAN → Confirm & create",
+      "label": "HUMAN \u2192 Confirm & create",
       "variant": "security"
     },
     {
@@ -212,7 +212,7 @@
       "from": "worker",
       "to": "browser",
       "y": 1095,
-      "label": "Verify customer/item/quantity → result via Vercel",
+      "label": "Verify customer/item/quantity \u2192 result via Vercel",
       "variant": "return"
     },
     {
@@ -222,6 +222,14 @@
       "y": 1131,
       "label": "reply.create if session connected",
       "variant": "default"
+    },
+    {
+      "id": "step-22",
+      "from": "voice",
+      "to": "human",
+      "y": 1167,
+      "label": "Spoken verified result",
+      "variant": "return"
     }
   ],
   "segments": [
@@ -247,7 +255,7 @@
     },
     {
       "from": 957,
-      "to": 1149,
+      "to": 1185,
       "label": "READ-AFTER-WRITE VERIFICATION"
     }
   ]

@@ -2,12 +2,12 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "VOICE2ERP · Current runtime internals",
+    "title": "VOICE2ERP \u00b7 Current runtime internals",
     "locale": "en",
     "quality_profile": "showcase",
     "viewBox": [
-      820,
-      1020
+      900,
+      1268
     ],
     "legend": {
       "mode": "hidden"
@@ -17,7 +17,7 @@
     {
       "id": "person",
       "type": "frontend",
-      "label": "Salesperson → browser",
+      "label": "Salesperson \u2192 browser",
       "pos": [
         45,
         80
@@ -39,7 +39,7 @@
         290,
         48
       ],
-      "sublabel": "Microphone · WSS · playback"
+      "sublabel": "Microphone \u00b7 WSS \u00b7 playback"
     },
     {
       "id": "ui",
@@ -75,39 +75,13 @@
       "label": "get_customer_briefing",
       "pos": [
         485,
-        138
+        174
       ],
       "size": [
         290,
-        48
-      ]
-    },
-    {
-      "id": "searchtool",
-      "type": "external",
-      "label": "search_items",
-      "pos": [
-        485,
-        196
+        128
       ],
-      "size": [
-        290,
-        48
-      ]
-    },
-    {
-      "id": "preparetool",
-      "type": "external",
-      "label": "prepare_sales_quote",
-      "pos": [
-        485,
-        254
-      ],
-      "size": [
-        290,
-        48
-      ],
-      "sublabel": "Read-only; no write tool"
+      "sublabel": "search_items \u00b7 prepare_sales_quote"
     },
     {
       "id": "voicetoken",
@@ -177,7 +151,7 @@
     {
       "id": "briefing",
       "type": "backend",
-      "label": "BriefingService · QuoteService",
+      "label": "BriefingService \u00b7 QuoteService",
       "pos": [
         485,
         468
@@ -230,24 +204,24 @@
     {
       "id": "records",
       "type": "database",
-      "label": "Sandbox: customers, contacts, items",
+      "label": "Business Central item records",
       "pos": [
         45,
-        894
+        1138
       ],
       "size": [
         290,
         58
       ],
-      "sublabel": "Orders · quotes · invoices / receivables"
+      "sublabel": "Also: customers \u00b7 orders \u00b7 quotes \u00b7 invoices"
     },
     {
       "id": "rest",
-      "type": "database",
+      "type": "backend",
       "label": "Business Central REST APIs",
       "pos": [
         485,
-        772
+        900
       ],
       "size": [
         290,
@@ -256,11 +230,11 @@
     },
     {
       "id": "odata",
-      "type": "database",
+      "type": "backend",
       "label": "Business Central OData",
       "pos": [
         485,
-        830
+        1028
       ],
       "size": [
         290,
@@ -269,17 +243,17 @@
     },
     {
       "id": "al",
-      "type": "database",
+      "type": "backend",
       "label": "AL Item Search codeunit",
       "pos": [
         485,
-        888
+        1138
       ],
       "size": [
         290,
         48
       ],
-      "sublabel": "Codeunit 50100 · SearchItems"
+      "sublabel": "Codeunit 50100 \u00b7 SearchItems"
     }
   ],
   "connections": [
@@ -302,11 +276,11 @@
       ]
     },
     {
-      "id": "preparetool-routing",
-      "from": "preparetool",
+      "id": "all-tools-routing",
+      "from": "briefingtool",
       "to": "routing",
       "variant": "default",
-      "label": "HTTP tools / TOOL",
+      "label": "All three HTTP tools / TOOL",
       "labelAt": [
         630,
         352
@@ -331,10 +305,10 @@
       "from": "client",
       "to": "rest",
       "variant": "default",
-      "label": "Direct ERP calls",
+      "label": "REST requests",
       "labelAt": [
         630,
-        707
+        730
       ]
     },
     {
@@ -352,7 +326,7 @@
       "label": "Native item lookup",
       "labelAt": [
         410,
-        967
+        1218
       ]
     },
     {
@@ -361,6 +335,47 @@
       "to": "records",
       "variant": "default",
       "label": "REST reads / writes"
+    },
+    {
+      "id": "verifyroute-routing",
+      "from": "verifyroute",
+      "to": "routing",
+      "variant": "default",
+      "label": "VERIFY"
+    },
+    {
+      "id": "client-odata",
+      "from": "client",
+      "to": "odata",
+      "variant": "default",
+      "label": "OData request",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          825,
+          608
+        ],
+        [
+          825,
+          1052
+        ]
+      ],
+      "labelAt": [
+        825,
+        987
+      ]
+    },
+    {
+      "id": "odata-al",
+      "from": "odata",
+      "to": "al",
+      "variant": "default",
+      "label": "SearchItems",
+      "labelAt": [
+        630,
+        1108
+      ]
     }
   ],
   "boundaries": [
@@ -379,15 +394,13 @@
       "label": "ASSEMBLYAI",
       "wraps": [
         "session",
-        "briefingtool",
-        "searchtool",
-        "preparetool"
+        "briefingtool"
       ],
       "pad": 18
     },
     {
       "kind": "region",
-      "label": "NEXT.JS / VERCEL · SERVER ROUTES",
+      "label": "NEXT.JS / VERCEL \u00b7 SERVER ROUTES",
       "wraps": [
         "voicetoken",
         "verifyroute",
@@ -409,13 +422,20 @@
     },
     {
       "kind": "region",
-      "label": "MICROSOFT",
+      "label": "BUSINESS CENTRAL \u00b7 SANDBOX",
       "wraps": [
-        "entra",
         "records",
         "rest",
         "odata",
         "al"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "MICROSOFT ENTRA ID",
+      "wraps": [
+        "entra"
       ],
       "pad": 18
     }
