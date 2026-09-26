@@ -373,6 +373,40 @@ const VOICE_LABELS: Record<
   },
 };
 
+const DEMO_SCENARIOS = [
+  {
+    label: "Customer briefing",
+    prompt: "Give me a briefing on Trey Research.",
+    detail: "Live customer, sales, and receivables context from Business Central.",
+  },
+  {
+    label: "Contact resolution",
+    prompt: "I'm meeting Helen Ray. What should I know?",
+    detail: "Resolves the contact to the linked customer before briefing.",
+  },
+  {
+    label: "Quote preparation",
+    prompt: "Prepare a quote for two whiteboards for Adatum Corporation.",
+    detail: "Resolves a real item and prepares a read-only quote preview.",
+  },
+  {
+    label: "Ambiguity test",
+    prompt: "Prepare a quote for five white items for Trey Research.",
+    detail: "Forces the agent to ask which returned Business Central item you mean.",
+  },
+] as const;
+
+const DEMO_CUSTOMERS = [
+  ["Adatum Corporation", "10000"],
+  ["Trey Research", "20000"],
+  ["School of Fine Art", "30000"],
+] as const;
+
+const DEMO_ITEMS = [
+  ["1996-S", "ATLANTA Whiteboard, base"],
+  ["SP-BOM3003", "Paint, white"],
+] as const;
+
 export default function Home() {
   const voiceSessionRef = useRef<VoiceAgentSession | null>(null);
   const historyCounterRef = useRef(0);
@@ -402,6 +436,8 @@ export default function Home() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteExecuting, setQuoteExecuting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [demoGuideOpen, setDemoGuideOpen] = useState(false);
+  const [demoCopyStatus, setDemoCopyStatus] = useState("");
 
   useEffect(() => {
     return () => {
@@ -409,6 +445,21 @@ export default function Home() {
       voiceSessionRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!demoGuideOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDemoGuideOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [demoGuideOpen]);
 
   function toggleTheme() {
     const currentTheme =
@@ -460,6 +511,15 @@ export default function Home() {
       .join("\n\n");
 
     await copyText(text, "Session copied");
+  }
+
+  async function copyDemoPrompt(prompt: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setDemoCopyStatus(label + " copied");
+    } catch {
+      setDemoCopyStatus("Copy failed");
+    }
   }
 
   async function verifyLive(query = "10000") {
@@ -885,6 +945,20 @@ export default function Home() {
         </Link>
 
         <div className="topbar-actions">
+          <button
+            className="demo-guide-trigger"
+            type="button"
+            onClick={() => {
+              setDemoCopyStatus("");
+              setDemoGuideOpen(true);
+            }}
+            aria-expanded={demoGuideOpen}
+            aria-controls="demo-guide-dialog"
+          >
+            <span>Try the demo</span>
+            <small>4 prompts</small>
+          </button>
+
           <div
             className="connection-state"
             aria-label="Business Central connected"
@@ -909,6 +983,130 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      {demoGuideOpen && (
+        <div
+          className="demo-guide-backdrop"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) {
+              setDemoGuideOpen(false);
+            }
+          }}
+        >
+          <section
+            id="demo-guide-dialog"
+            className="demo-guide-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="demo-guide-title"
+          >
+            <div className="demo-guide-heading">
+              <div>
+                <p className="section-kicker">Jury quick start</p>
+                <h2 id="demo-guide-title">Try VOICE2ERP with known demo records.</h2>
+                <p>
+                  The names and item numbers below are discoverability metadata only.
+                  Business Central still supplies the live balances, orders, quotes,
+                  receivables, prices, and created document numbers.
+                </p>
+              </div>
+              <button
+                className="demo-guide-close"
+                type="button"
+                onClick={() => setDemoGuideOpen(false)}
+                aria-label="Close demo guide"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="demo-scenario-grid">
+              {DEMO_SCENARIOS.map((scenario, index) => (
+                <article className="demo-scenario" key={scenario.label}>
+                  <div className="demo-scenario-topline">
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{scenario.label}</strong>
+                  </div>
+                  <p className="demo-prompt">“{scenario.prompt}”</p>
+                  <p className="demo-scenario-detail">{scenario.detail}</p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyDemoPrompt(scenario.prompt, scenario.label)
+                    }
+                  >
+                    Copy prompt
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <div className="demo-records">
+              <div>
+                <span className="record-label">Customers</span>
+                <ul>
+                  {DEMO_CUSTOMERS.map(([name, number]) => (
+                    <li key={number}>
+                      <strong>{name}</strong>
+                      <span className="mono">{number}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <span className="record-label">Contact</span>
+                <ul>
+                  <li>
+                    <strong>Helen Ray</strong>
+                    <span>→ Trey Research</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <span className="record-label">Products</span>
+                <ul>
+                  {DEMO_ITEMS.map(([number, description]) => (
+                    <li key={number}>
+                      <strong className="mono">{number}</strong>
+                      <span>{description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="demo-guide-footer">
+              <div>
+                <span className="demo-live-note">Live Business Central sandbox</span>
+                <p>
+                  Values can change as the demo is used. Quote creation always waits
+                  for explicit <strong>Confirm &amp; create</strong> in the UI.
+                </p>
+              </div>
+
+              <div className="demo-guide-actions">
+                <span aria-live="polite">{demoCopyStatus}</span>
+                <button
+                  className="primary-action"
+                  type="button"
+                  onClick={() => {
+                    setDemoGuideOpen(false);
+                    if (!voiceIsRunning) {
+                      void startVoiceSession();
+                    }
+                  }}
+                  disabled={!voiceIsRunning && voiceState === "connecting"}
+                >
+                  {voiceIsRunning ? "Return to live session" : "Start voice session"}
+                  {!voiceIsRunning && <ArrowIcon />}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
 
       <main className="product-grid">
         <section className="hero-panel" aria-labelledby="hero-title">

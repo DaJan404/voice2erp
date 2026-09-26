@@ -30,6 +30,8 @@ Voice retrieves customer context and prepares a proposal. The human reviews the 
 
 Start the voice session in the [web demo](https://voice2erp.vercel.app) and allow microphone access. These prompts use the project's demo records; you do not need direct access to Business Central.
 
+The public app also includes a **Try the demo** guide with these prompts, stable customer/item identities, and copy buttons. The guide is discoverability metadata only; the agent still resolves live operational data from Business Central.
+
 | Scenario | Say |
 | --- | --- |
 | Customer briefing | “Give me a briefing on Trey Research.” |
@@ -167,4 +169,4 @@ The tracked Python tests cover token validation, confirmation signing/tampering/
 
 Current behavior creates a single-item draft quote; it does not post invoices, send quotes by email, record meeting notes, or automate general follow-up tasks. Reads are bounded and not a complete paginated sales history. The public demo has service-token separation and selected same-origin checks, but no implemented per-user login/role model. Partial failures can require ERP inspection.
 
-Future ideas include a discoverability-only “Try the demo” panel, broader testing, stronger user authorization, and richer post-meeting workflows. These are proposals, not implemented capabilities. See [design decisions](docs/design-decisions.md), [use cases](docs/use-cases.md), and the [full documentation](docs/README.md).
+Future ideas include broader testing, stronger user authorization, and richer post-meeting workflows. These are proposals, not implemented capabilities. The public app now includes a discoverability-only **Try the demo** panel for jury self-service. See [design decisions](docs/design-decisions.md), [use cases](docs/use-cases.md), and the [full documentation](docs/README.md).

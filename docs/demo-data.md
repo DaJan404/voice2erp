@@ -4,6 +4,8 @@
 
 The jury does not need direct access to the Business Central tenant. Use these stable demo identities to discover the supported scenarios through the voice application.
 
+The public web app exposes the same catalog through **Try the demo**, including copyable prompts. This page remains the detailed reference.
+
 **This catalog is discoverability metadata only. It is never a replacement data source for the agent. Business Central remains the runtime source of truth.**
 
 Customer, sales, quote and receivables values are retrieved live from the Business Central demo tenant and may change as the demo is used.
