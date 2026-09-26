@@ -8,24 +8,54 @@ Open the [public application](https://voice2erp.vercel.app), allow microphone ac
 
 Use hands-free voice only where safe and legal. Perform the entire screen-based demonstration while stationary; a travel story does not require driving during the demo.
 
-## Suggested walkthrough
+## Core demo — target 60–90 seconds
+
+The primary walkthrough should show the complete value chain once: live ERP context, voice-driven preparation, explicit human approval, ERP execution, and read-after-write verification.
 
 | Step | Prompt / action | What the jury should observe |
 | --- | --- | --- |
-| 1 | “Give me a briefing on Trey Research.” | A tool call, concise live briefing, and independently requested ERP evidence in the UI |
-| 2 | “I'm meeting Helen Ray. What should I know?” | The linked Trey Research briefing and resolved-contact information |
-| 3 | “Prepare a quote for two whiteboards for Adatum Corporation.” | Item resolution and preview; no created document yet |
-| 4 | Inspect customer, exact item, quantity, reference price | The distinction between preparation and execution |
-| 5 | Click **Confirm & create** | Returned quote number, final ERP amount, and verification metadata after re-reading |
-| 6 | Keep the session connected | Requested spoken confirmation grounded in the returned facts |
+| 1 | “Give me a briefing on Trey Research.” | A concise live briefing plus independently requested Business Central evidence in the UI |
+| 2 | “Prepare a quote for two whiteboards for Adatum Corporation.” | Business Central item resolution and a read-only quote preview; no document has been created yet |
+| 3 | Inspect customer, exact item, quantity, and reference price | The proposal is grounded in resolved ERP records and still requires human approval |
+| 4 | Click **Confirm & create** | The application executes the write through the protected server path |
+| 5 | Show the returned quote number, final ERP amount, and verification metadata | The Worker has re-read the quote and its lines and checked the expected customer, item, and quantity |
+| 6 | Keep the voice session connected | AssemblyAI can speak the verified result returned by the application |
 
-Demonstrate ambiguity separately with “Prepare a quote for five white items for Trey Research.” Let the agent ask for a choice. Answer “The first one,” then check that the preview uses that returned candidate. You can cancel this preview to avoid an additional write.
+The exact timing depends on network and service latency; the 60–90 second target is a presentation goal, not a runtime guarantee.
 
-Do not promise fixed amounts, document numbers, counts, or a fixed transcript. The catalog supplies identities; the runtime supplies facts.
+Do not promise fixed amounts, document numbers, counts, or a fixed transcript. The demo catalog supplies stable identities; the runtime supplies current business facts.
+
+## Optional deep dives
+
+Use these only if the jury asks about customer resolution, ambiguity, hallucination controls, or the Business Central source-of-truth model.
+
+### Contact-to-customer resolution
+
+Say:
+
+> “I'm meeting Helen Ray. What should I know?”
+
+The service should resolve the contact through live Business Central company information to Trey Research and retrieve the linked customer briefing. This demonstrates that the agent is not using a hard-coded Helen-to-Trey response.
+
+### Ambiguous product resolution
+
+Say:
+
+> “Prepare a quote for five white items for Trey Research.”
+
+Let the agent present the candidates returned by Business Central and ask for a choice. Answer:
+
+> “The first one.”
+
+Then verify that the preview uses the exact first candidate returned in that run. Cancel the preview if you do not want another sandbox write.
+
+This scenario demonstrates a key rule: the language model interprets intent, but Business Central resolves item identity and the human chooses when the ERP result is ambiguous.
 
 ## Explain the evidence
 
-A spoken statement alone is not the proof of creation. Show the application result returned after the Worker fetched the quote and lines and checked customer, item, and quantity. Customer verification metadata names the source and retrieval time; it is not an independent audit-service certificate. The jury can assess this application evidence without tenant access, while a maintainer can inspect the record in Business Central if further confirmation is needed.
+A spoken statement alone is not proof of creation. Show the application result returned after the Worker fetched the quote and lines and checked customer, item, and quantity. Customer verification metadata names the source and retrieval time; it is not an independent audit-service certificate.
+
+The jury can evaluate this application evidence without direct tenant access. If deeper verification is needed during development or judging, a maintainer can inspect the sandbox record in Business Central.
 
 ## Recovery during a demo
 
