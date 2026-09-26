@@ -2,14 +2,17 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "VOICE2ERP \u00b7 Quote preparation and execution",
+    "title": "VOICE2ERP · Quote preparation and execution",
     "quality_profile": "showcase",
     "locale": "en",
     "column_fit": "spread",
     "viewBox": [
-      1400,
-      780
-    ]
+      820,
+      1242
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "participants": [
     {
@@ -40,7 +43,7 @@
     {
       "id": "bc",
       "type": "database",
-      "label": "Business Central"
+      "label": "BC sandbox"
     }
   ],
   "messages": [
@@ -48,15 +51,15 @@
       "id": "step-0",
       "from": "human",
       "to": "voice",
-      "y": 160,
-      "label": "Request quote by voice",
+      "y": 175,
+      "label": "Request a quote",
       "variant": "default"
     },
     {
       "id": "step-1",
       "from": "voice",
       "to": "worker",
-      "y": 188,
+      "y": 211,
       "label": "search_items",
       "variant": "default"
     },
@@ -64,145 +67,188 @@
       "id": "step-2",
       "from": "worker",
       "to": "bc",
-      "y": 216,
-      "label": "AL OData search / candidates",
+      "y": 247,
+      "label": "AL/OData item resolution",
       "variant": "default"
     },
     {
       "id": "step-3",
       "from": "worker",
       "to": "voice",
-      "y": 244,
-      "label": "Resolved item or ask user to choose",
-      "variant": "default"
+      "y": 283,
+      "label": "Exact item / user chooses if ambiguous",
+      "variant": "return"
     },
     {
       "id": "step-4",
       "from": "voice",
       "to": "worker",
-      "y": 272,
-      "label": "prepare_sales_quote (read-only)",
-      "variant": "default"
+      "y": 369,
+      "label": "prepare_sales_quote · NO ERP MUTATION",
+      "variant": "emphasis"
     },
     {
       "id": "step-5",
       "from": "worker",
-      "to": "bc",
-      "y": 300,
-      "label": "Read customer + item",
-      "variant": "default"
+      "to": "voice",
+      "y": 405,
+      "label": "Read-only preview · no signed token",
+      "variant": "return"
     },
     {
       "id": "step-6",
-      "from": "worker",
-      "to": "voice",
-      "y": 328,
-      "label": "Read-only preview; no confirmation token",
+      "from": "voice",
+      "to": "browser",
+      "y": 441,
+      "label": "tool.call arguments (may arrive earlier)",
       "variant": "default"
     },
     {
       "id": "step-7",
-      "from": "voice",
-      "to": "browser",
-      "y": 356,
-      "label": "tool.call event / preparation arguments",
-      "variant": "default"
-    },
-    {
-      "id": "step-8",
       "from": "browser",
       "to": "vercel",
-      "y": 384,
+      "y": 477,
       "label": "POST /api/quotes/prepare",
       "variant": "default"
     },
     {
-      "id": "step-9",
+      "id": "step-8",
       "from": "vercel",
       "to": "worker",
-      "y": 412,
-      "label": "GET prepare / VERIFY token",
+      "y": 513,
+      "label": "VERIFY-authorized preparation",
+      "variant": "default"
+    },
+    {
+      "id": "step-9",
+      "from": "worker",
+      "to": "bc",
+      "y": 549,
+      "label": "Read customer + item; no write",
       "variant": "default"
     },
     {
       "id": "step-10",
       "from": "worker",
-      "to": "bc",
-      "y": 440,
-      "label": "Re-resolve customer + item (read-only)",
-      "variant": "default"
+      "to": "browser",
+      "y": 585,
+      "label": "Via Vercel: preview + signed token",
+      "variant": "return"
     },
     {
       "id": "step-11",
-      "from": "worker",
+      "from": "human",
       "to": "browser",
-      "y": 468,
-      "label": "Via Vercel: preview + signed token (10 min)",
-      "variant": "default"
+      "y": 671,
+      "label": "HUMAN → Confirm & create",
+      "variant": "security"
     },
     {
       "id": "step-12",
-      "from": "human",
-      "to": "browser",
-      "y": 496,
-      "label": "Review / Confirm & create",
+      "from": "browser",
+      "to": "vercel",
+      "y": 707,
+      "label": "Signed confirmation + request ID",
       "variant": "security"
     },
     {
       "id": "step-13",
-      "from": "browser",
-      "to": "vercel",
-      "y": 524,
-      "label": "POST create / signed token + request ID",
+      "from": "vercel",
+      "to": "worker",
+      "y": 743,
+      "label": "EXECUTE-authorized create request",
       "variant": "security"
     },
     {
       "id": "step-14",
-      "from": "vercel",
-      "to": "worker",
-      "y": 552,
-      "label": "POST create / EXECUTE token",
-      "variant": "security"
+      "from": "worker",
+      "to": "bc",
+      "y": 829,
+      "label": "Revalidate records / check request marker",
+      "variant": "default"
     },
     {
       "id": "step-15",
       "from": "worker",
       "to": "bc",
-      "y": 580,
-      "label": "Revalidate / marker lookup / create header + line",
-      "variant": "default"
+      "y": 865,
+      "label": "Create quote header",
+      "variant": "emphasis"
     },
     {
       "id": "step-16",
       "from": "worker",
       "to": "bc",
-      "y": 608,
-      "label": "GET quote + lines / verify identity and quantity",
-      "variant": "default"
+      "y": 901,
+      "label": "Create quote line",
+      "variant": "emphasis"
     },
     {
       "id": "step-17",
       "from": "worker",
-      "to": "browser",
-      "y": 636,
-      "label": "Via Vercel: verified result",
+      "to": "bc",
+      "y": 987,
+      "label": "Fetch quote (concurrent reads)",
       "variant": "default"
     },
     {
       "id": "step-18",
-      "from": "browser",
-      "to": "voice",
-      "y": 664,
-      "label": "reply.create / verified facts",
+      "from": "worker",
+      "to": "bc",
+      "y": 1023,
+      "label": "Fetch lines (concurrent reads)",
       "variant": "default"
     },
     {
       "id": "step-19",
-      "from": "voice",
-      "to": "human",
-      "y": 692,
-      "label": "Spoken result if session connected",
+      "from": "bc",
+      "to": "worker",
+      "y": 1059,
+      "label": "Quote + lines returned",
+      "variant": "return"
+    },
+    {
+      "id": "step-20",
+      "from": "worker",
+      "to": "browser",
+      "y": 1095,
+      "label": "Verify customer/item/quantity → result via Vercel",
+      "variant": "return"
+    },
+    {
+      "id": "step-21",
+      "from": "browser",
+      "to": "voice",
+      "y": 1131,
+      "label": "reply.create if session connected",
       "variant": "default"
+    }
+  ],
+  "segments": [
+    {
+      "from": 145,
+      "to": 301,
+      "label": "TALK / RESOLVE"
+    },
+    {
+      "from": 339,
+      "to": 603,
+      "label": "READ-ONLY PREPARATION"
+    },
+    {
+      "from": 641,
+      "to": 761,
+      "label": "HUMAN CONFIRMATION"
+    },
+    {
+      "from": 799,
+      "to": 919,
+      "label": "EXECUTION"
+    },
+    {
+      "from": 957,
+      "to": 1149,
+      "label": "READ-AFTER-WRITE VERIFICATION"
     }
   ]
 }

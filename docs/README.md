@@ -23,6 +23,8 @@ For a first evaluation, start with the demo catalog and jury guide. For implemen
 
 - [Web development guide](../web/README.md)
 - [Reproducible diagram sources](../assets/diagrams/README.md)
+- [System overview](../assets/voice2erp-system-overview.svg)
+- [Field-sales comparison](../assets/voice2erp-field-sales-flow.svg)
 - [Runtime diagram](../assets/voice2erp-runtime.svg)
 - [Quote sequence](../assets/voice2erp-quote-workflow.svg)
 - [Trust boundaries](../assets/voice2erp-trust-boundaries.svg)

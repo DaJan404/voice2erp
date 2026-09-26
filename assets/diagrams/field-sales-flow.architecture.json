@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VOICE2ERP · From customer visits to verified action",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [
+      830,
+      955
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "components": [
+    {
+      "id": "without0",
+      "type": "external",
+      "label": "Customer A",
+      "pos": [
+        45,
+        90
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Travel"
+    },
+    {
+      "id": "without1",
+      "type": "external",
+      "label": "Customer B",
+      "pos": [
+        45,
+        210
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Travel"
+    },
+    {
+      "id": "without2",
+      "type": "external",
+      "label": "Customer C",
+      "pos": [
+        45,
+        330
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Back at laptop"
+    },
+    {
+      "id": "without3",
+      "type": "external",
+      "label": "Customer lookup",
+      "pos": [
+        45,
+        450
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Meeting recollection"
+    },
+    {
+      "id": "without4",
+      "type": "external",
+      "label": "Product search",
+      "pos": [
+        45,
+        570
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Quote preparation"
+    },
+    {
+      "id": "with0",
+      "type": "frontend",
+      "label": "Customer A",
+      "pos": [
+        445,
+        90
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Travel / transition"
+    },
+    {
+      "id": "with1",
+      "type": "frontend",
+      "label": "“Brief me on Trey Research”",
+      "pos": [
+        445,
+        210
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Live ERP context"
+    },
+    {
+      "id": "with2",
+      "type": "frontend",
+      "label": "Customer B",
+      "pos": [
+        445,
+        330
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Travel / transition"
+    },
+    {
+      "id": "with3",
+      "type": "frontend",
+      "label": "“Prepare a quote for two whiteboards”",
+      "pos": [
+        445,
+        450
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Read-only proposal"
+    },
+    {
+      "id": "with4",
+      "type": "security",
+      "label": "Safe human review",
+      "pos": [
+        445,
+        570
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Confirm & create"
+    },
+    {
+      "id": "with5",
+      "type": "frontend",
+      "label": "Verified Business Central record",
+      "pos": [
+        445,
+        690
+      ],
+      "size": [
+        330,
+        66
+      ],
+      "sublabel": "Write → re-read → verified result"
+    },
+    {
+      "id": "safety",
+      "type": "security",
+      "label": "Hands-free only where safe and legal",
+      "pos": [
+        95,
+        835
+      ],
+      "size": [
+        620,
+        65
+      ],
+      "sublabel": "UI confirmation when safely stopped or otherwise appropriate"
+    }
+  ],
+  "connections": [
+    {
+      "id": "without0-without1",
+      "from": "without0",
+      "to": "without1",
+      "variant": "default"
+    },
+    {
+      "id": "without1-without2",
+      "from": "without1",
+      "to": "without2",
+      "variant": "default"
+    },
+    {
+      "id": "without2-without3",
+      "from": "without2",
+      "to": "without3",
+      "variant": "default"
+    },
+    {
+      "id": "without3-without4",
+      "from": "without3",
+      "to": "without4",
+      "variant": "default"
+    },
+    {
+      "id": "with0-with1",
+      "from": "with0",
+      "to": "with1",
+      "variant": "default"
+    },
+    {
+      "id": "with1-with2",
+      "from": "with1",
+      "to": "with2",
+      "variant": "default"
+    },
+    {
+      "id": "with2-with3",
+      "from": "with2",
+      "to": "with3",
+      "variant": "default"
+    },
+    {
+      "id": "with3-with4",
+      "from": "with3",
+      "to": "with4",
+      "variant": "default"
+    },
+    {
+      "id": "with4-with5",
+      "from": "with4",
+      "to": "with5",
+      "variant": "default"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "WITHOUT VOICE2ERP · WORK WAITS UNTIL LATER",
+      "wraps": [
+        "without0",
+        "without1",
+        "without2",
+        "without3",
+        "without4"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "WITH VOICE2ERP · PREPARE BETWEEN VISITS",
+      "wraps": [
+        "with0",
+        "with1",
+        "with2",
+        "with3",
+        "with4",
+        "with5"
+      ],
+      "pad": 18
+    }
+  ]
+}

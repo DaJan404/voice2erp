@@ -2,144 +2,349 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "VOICE2ERP \u00b7 Trust boundaries",
-    "quality_profile": "showcase",
+    "title": "VOICE2ERP · Credentials and trust boundaries",
     "locale": "en",
+    "quality_profile": "showcase",
     "viewBox": [
-      1250,
-      650
-    ]
+      800,
+      1020
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
-      "id": "browser",
+      "id": "receives",
       "type": "frontend",
-      "label": "Browser",
-      "sublabel": "Voice token + signed confirmation",
+      "label": "Short-lived AssemblyAI session token",
       "pos": [
-        39,
-        260
+        45,
+        90
       ],
       "size": [
-        210,
-        78
+        330,
+        52
       ],
-      "tag": "NO BC CLIENT SECRET / EXECUTE SECRET"
+      "sublabel": "Signed quote confirmation token"
     },
     {
-      "id": "vercel",
-      "type": "backend",
-      "label": "Vercel server",
-      "sublabel": "AssemblyAI key \u00b7 VERIFY \u00b7 EXECUTE",
+      "id": "noaai",
+      "type": "security",
+      "label": "NO ASSEMBLYAI_API_KEY",
       "pos": [
-        335,
-        430
+        45,
+        152
       ],
       "size": [
-        210,
-        78
+        330,
+        42
       ]
     },
     {
-      "id": "voice",
+      "id": "nobc",
+      "type": "security",
+      "label": "NO BC_CLIENT_SECRET",
+      "pos": [
+        45,
+        204
+      ],
+      "size": [
+        330,
+        42
+      ]
+    },
+    {
+      "id": "noservice",
+      "type": "security",
+      "label": "NO VOICE2ERP_TOOL_TOKEN",
+      "pos": [
+        45,
+        256
+      ],
+      "size": [
+        330,
+        42
+      ]
+    },
+    {
+      "id": "aai",
+      "type": "backend",
+      "label": "ASSEMBLYAI_API_KEY",
+      "pos": [
+        445,
+        90
+      ],
+      "size": [
+        290,
+        52
+      ]
+    },
+    {
+      "id": "webtokens",
+      "type": "backend",
+      "label": "VERIFY token · EXECUTE token",
+      "pos": [
+        445,
+        152
+      ],
+      "size": [
+        290,
+        52
+      ]
+    },
+    {
+      "id": "tool",
       "type": "external",
-      "label": "AssemblyAI service",
-      "sublabel": "TOOL token for read-only HTTP tools",
+      "label": "TOOL token",
       "pos": [
-        335,
-        80
+        45,
+        462
       ],
       "size": [
-        210,
-        78
+        290,
+        52
+      ],
+      "sublabel": "Hosted HTTP tool configuration"
+    },
+    {
+      "id": "tokens",
+      "type": "backend",
+      "label": "TOOL · VERIFY · EXECUTE tokens",
+      "pos": [
+        445,
+        462
+      ],
+      "size": [
+        290,
+        48
       ]
     },
     {
-      "id": "worker",
+      "id": "config",
       "type": "backend",
-      "label": "Cloudflare Worker",
-      "sublabel": "BC credentials only here",
+      "label": "BC client configuration",
       "pos": [
-        655,
-        260
+        445,
+        520
       ],
       "size": [
-        210,
-        78
+        290,
+        48
+      ]
+    },
+    {
+      "id": "secret",
+      "type": "security",
+      "label": "BC_CLIENT_SECRET",
+      "pos": [
+        445,
+        578
       ],
-      "tag": "TOOL \u00b7 VERIFY \u00b7 EXECUTE"
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "bearer",
+      "type": "security",
+      "label": "Entra bearer token",
+      "pos": [
+        445,
+        636
+      ],
+      "size": [
+        290,
+        48
+      ]
     },
     {
       "id": "entra",
       "type": "security",
       "label": "Microsoft Entra ID",
-      "sublabel": "Issues ERP access token to Worker",
       "pos": [
-        655,
-        70
+        45,
+        636
       ],
       "size": [
-        210,
-        78
-      ]
+        290,
+        48
+      ],
+      "sublabel": "Issues ERP bearer token"
     },
     {
       "id": "bc",
       "type": "database",
-      "label": "Business Central",
-      "sublabel": "REST / AL \u00b7 sandbox business records",
+      "label": "Authoritative business records",
       "pos": [
-        975,
-        260
+        445,
+        842
       ],
       "size": [
-        210,
-        78
+        290,
+        48
+      ]
+    },
+    {
+      "id": "al",
+      "type": "database",
+      "label": "Native AL resolver",
+      "pos": [
+        445,
+        900
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "limits",
+      "type": "security",
+      "label": "Same-origin ≠ authentication",
+      "pos": [
+        45,
+        842
+      ],
+      "size": [
+        330,
+        48
+      ],
+      "sublabel": "Signed confirmation ≠ user identity"
+    },
+    {
+      "id": "retry",
+      "type": "security",
+      "label": "Marker-based retries",
+      "pos": [
+        45,
+        900
+      ],
+      "size": [
+        330,
+        48
+      ],
+      "sublabel": "Not exactly-once execution"
+    },
+    {
+      "id": "noverify",
+      "type": "security",
+      "label": "NO VOICE2ERP_VERIFY_TOKEN",
+      "sublabel": "NO VOICE2ERP_EXECUTE_TOKEN",
+      "pos": [
+        45,
+        318
+      ],
+      "size": [
+        330,
+        52
       ]
     }
   ],
   "connections": [
     {
-      "id": "browser-vercel",
-      "from": "browser",
-      "to": "vercel",
-      "label": "HTTPS / confirmation",
-      "variant": "security"
+      "id": "receives-aai",
+      "from": "receives",
+      "to": "aai",
+      "variant": "default",
+      "label": "HTTPS"
     },
     {
-      "id": "browser-voice",
-      "from": "browser",
-      "to": "voice",
-      "label": "Short-lived session token / WSS",
-      "variant": "security"
+      "id": "tool-tokens",
+      "from": "tool",
+      "to": "tokens",
+      "variant": "security",
+      "label": "TOOL"
     },
     {
-      "id": "vercel-worker",
-      "from": "vercel",
-      "to": "worker",
-      "label": "VERIFY / EXECUTE headers",
-      "variant": "security"
+      "id": "webtokens-tokens",
+      "from": "webtokens",
+      "to": "tokens",
+      "variant": "security",
+      "label": "VERIFY / EXECUTE",
+      "labelAt": [
+        590,
+        355
+      ]
     },
     {
-      "id": "voice-worker",
-      "from": "voice",
-      "to": "worker",
-      "label": "TOOL header",
-      "variant": "security"
-    },
-    {
-      "id": "worker-entra",
-      "from": "worker",
+      "id": "bearer-entra",
+      "from": "bearer",
       "to": "entra",
-      "label": "Client credentials",
-      "variant": "security"
+      "variant": "security",
+      "label": "Client credentials"
     },
     {
-      "id": "worker-bc",
-      "from": "worker",
+      "id": "bearer-bc",
+      "from": "bearer",
       "to": "bc",
-      "label": "ERP bearer token",
-      "variant": "security"
+      "variant": "security",
+      "label": "Bearer-authenticated calls",
+      "labelAt": [
+        590,
+        757
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "BROWSER · RECEIVES TOKENS, NOT SECRETS",
+      "wraps": [
+        "receives",
+        "noaai",
+        "nobc",
+        "noservice",
+        "noverify"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "VERCEL · SERVER ONLY",
+      "wraps": [
+        "aai",
+        "webtokens"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "ASSEMBLYAI HOSTED AGENT",
+      "wraps": [
+        "tool"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "CLOUDFLARE WORKER · SERVER ONLY",
+      "wraps": [
+        "tokens",
+        "config",
+        "secret",
+        "bearer"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "BUSINESS CENTRAL",
+      "wraps": [
+        "bc",
+        "al"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "GUARANTEE LIMITS",
+      "wraps": [
+        "limits",
+        "retry"
+      ],
+      "pad": 18
     }
   ]
 }

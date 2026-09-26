@@ -4,7 +4,7 @@
 
 ![Quote sequence](../assets/voice2erp-quote-workflow.svg)
 
-The diagram shows the successful logical flow. Voice tool execution and browser reactions are separate asynchronous requests; it does not promise that their responses arrive in this exact order. OAuth exchanges are omitted here and shown in [architecture](architecture.md).
+`BC sandbox` in the diagram means the Microsoft Dynamics 365 Business Central demo tenant. The five diagram bands distinguish talk/resolution, read-only preparation, human confirmation, execution, and read-after-write verification. Creating the header and line occurs only after the human confirmation path. Quote and line fetches are shown separately for clarity but run concurrently in the implementation. The diagram shows the successful logical flow. Voice tool execution and browser reactions are separate asynchronous requests; it does not promise that their responses arrive in this exact order. OAuth exchanges are omitted here and shown in [architecture](architecture.md).
 
 ## Talk: two read-only preparation paths
 
