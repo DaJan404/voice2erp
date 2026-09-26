@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VOICE2ERP web application
 
-## Getting Started
+Next.js provides the browser voice session, live ERP evidence panel, quote preview and explicit confirmation UI. Server routes mint AssemblyAI session tokens and proxy verification/preparation/execution to the Cloudflare Worker.
 
-First, run the development server:
+Start with the [project README](../README.md), [deployment instructions](../docs/deployment.md), and [architecture](../docs/architecture.md).
+
+## Local development
 
 ```bash
+npm ci
+cp .env.example .env.local
+# Populate the server-side values locally.
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. Hosted voice tools need a Worker reachable from AssemblyAI; a local web page alone does not redirect those tools to localhost.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
+The package has no automated browser-test script. Build and lint do not validate a live voice or ERP session.
 
-To learn more about Next.js, take a look at the following resources:
+## Server-side configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use `ASSEMBLYAI_API_KEY`, `VOICE2ERP_AGENT_ID`, `VOICE2ERP_API_BASE`, `VOICE2ERP_VERIFY_TOKEN`, and `VOICE2ERP_EXECUTE_TOKEN`. None should be exposed through `NEXT_PUBLIC_*`. Business Central credentials belong only in the Worker.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The browser receives a short-lived voice token and may receive a signed quote confirmation token. It never receives the AssemblyAI API key or execute secret. See [security and trust](../docs/security-and-trust.md).

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VOICE2ERP \u00b7 Trust boundaries",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [
+      1250,
+      650
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Voice token + signed confirmation",
+      "pos": [
+        39,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ],
+      "tag": "NO BC CLIENT SECRET / EXECUTE SECRET"
+    },
+    {
+      "id": "vercel",
+      "type": "backend",
+      "label": "Vercel server",
+      "sublabel": "AssemblyAI key \u00b7 VERIFY \u00b7 EXECUTE",
+      "pos": [
+        335,
+        430
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "voice",
+      "type": "external",
+      "label": "AssemblyAI service",
+      "sublabel": "TOOL token for read-only HTTP tools",
+      "pos": [
+        335,
+        80
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Cloudflare Worker",
+      "sublabel": "BC credentials only here",
+      "pos": [
+        655,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ],
+      "tag": "TOOL \u00b7 VERIFY \u00b7 EXECUTE"
+    },
+    {
+      "id": "entra",
+      "type": "security",
+      "label": "Microsoft Entra ID",
+      "sublabel": "Issues ERP access token to Worker",
+      "pos": [
+        655,
+        70
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "bc",
+      "type": "database",
+      "label": "Business Central",
+      "sublabel": "REST / AL \u00b7 sandbox business records",
+      "pos": [
+        975,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-vercel",
+      "from": "browser",
+      "to": "vercel",
+      "label": "HTTPS / confirmation",
+      "variant": "security"
+    },
+    {
+      "id": "browser-voice",
+      "from": "browser",
+      "to": "voice",
+      "label": "Short-lived session token / WSS",
+      "variant": "security"
+    },
+    {
+      "id": "vercel-worker",
+      "from": "vercel",
+      "to": "worker",
+      "label": "VERIFY / EXECUTE headers",
+      "variant": "security"
+    },
+    {
+      "id": "voice-worker",
+      "from": "voice",
+      "to": "worker",
+      "label": "TOOL header",
+      "variant": "security"
+    },
+    {
+      "id": "worker-entra",
+      "from": "worker",
+      "to": "entra",
+      "label": "Client credentials",
+      "variant": "security"
+    },
+    {
+      "id": "worker-bc",
+      "from": "worker",
+      "to": "bc",
+      "label": "ERP bearer token",
+      "variant": "security"
+    }
+  ]
+}
