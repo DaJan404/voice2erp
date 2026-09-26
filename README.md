@@ -74,6 +74,14 @@ The agent is instructed to retrieve evidence for new factual ERP questions rathe
 
 The voice agent has only three read-only tools: `get_customer_briefing`, `search_items`, and `prepare_sales_quote`. There is no direct create-sales-quote voice tool. These controls reduce reliance on conversational promises, although the prototype does not claim that a language model can never make a factual mistake.
 
+## Why AssemblyAI
+
+AssemblyAI is the real-time conversational layer of VOICE2ERP, not just a speech-to-text component. The browser connects to the hosted Voice Agent over WebSocket with a short-lived session token. The agent interprets spoken intent and invokes the three read-only HTTP tools that connect the conversation to live ERP data.
+
+The web application also consumes AssemblyAI `tool.call` events. Those events let the UI independently retrieve ERP evidence and create the token-bearing quote preview instead of trusting a spoken response as proof. After a human-confirmed write has been re-read and verified in Business Central, the browser uses `reply.create` to ask the still-connected agent to speak the verified result.
+
+AssemblyAI therefore spans the real-time voice session, agent orchestration, tool invocation, UI-facing tool events, and the final spoken response. Business Central remains the source of truth for business records and entity identity.
+
 ## Current architecture
 
 ![Current VOICE2ERP runtime architecture](assets/voice2erp-runtime.svg)
