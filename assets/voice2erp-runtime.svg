@@ -1,4 +1,4 @@
-<svg viewBox="0 0 820 1020" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" style="" width="820" height="1020" xmlns="http://www.w3.org/2000/svg"><style>@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+<svg viewBox="0 0 900 1268" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" style="" width="900" height="1268" xmlns="http://www.w3.org/2000/svg"><style>@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 600; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
@@ -318,18 +318,23 @@ rect.c-bg-rect { fill: var(--bg); }
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="3" data-composition-frame-label="CLOUDFLARE WORKER" x="467" y="386" width="326" height="266" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="4" data-composition-frame-label="MICROSOFT" x="27" y="748" width="766" height="224" rx="12" class="c-region" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="4" data-composition-frame-label="BUSINESS CENTRAL · SANDBOX" x="27" y="876" width="766" height="340" rx="12" class="c-region" stroke-width="1"/>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="5" data-composition-frame-label="MICROSOFT ENTRA ID" x="27" y="748" width="326" height="92" rx="12" class="c-region" stroke-width="1"/>
 
         <!-- Connection paths (before components for correct z-order) -->
         <path data-edge-from="audio" data-edge-to="session" data-edge-label="WSS" data-edge-key="0" data-edge-id="audio-session" data-composition-points="335,162;410,162;410,104;485,104" d="M 335 162 L 402 162 Q 410 162 410 154 L 410 112 Q 410 104 418 104 L 485 104" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="ui" data-edge-to="voicetoken" data-edge-label="HTTPS / session token" data-edge-key="1" data-edge-id="ui-voicetoken" data-composition-points="190,244;190,410" d="M 190 244 L 190 410" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="preparetool" data-edge-to="routing" data-edge-label="HTTP tools / TOOL" data-edge-key="2" data-edge-id="preparetool-routing" data-composition-points="630,302;630,410" d="M 630 302 L 630 410" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="briefingtool" data-edge-to="routing" data-edge-label="All three HTTP tools / TOOL" data-edge-key="2" data-edge-id="all-tools-routing" data-composition-points="630,302;630,410" d="M 630 302 L 630 410" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="prepareroute" data-edge-to="signed" data-edge-label="VERIFY / signed preview" data-edge-key="3" data-edge-id="prepareroute-signed" data-composition-points="335,550;485,550" d="M 335 550 L 485 550" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
         <path data-edge-from="createroute" data-edge-to="client" data-edge-label="EXECUTE / confirmed write" data-edge-key="4" data-edge-id="createroute-client" data-composition-points="335,601;485,601" d="M 335 601 L 485 601" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="client" data-edge-to="rest" data-edge-label="Direct ERP calls" data-edge-key="5" data-edge-id="client-rest" data-composition-points="630,632;630,772" d="M 630 632 L 630 772" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="client" data-edge-to="rest" data-edge-label="REST requests" data-edge-key="5" data-edge-id="client-rest" data-composition-points="630,632;630,900" d="M 630 632 L 630 900" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="client" data-edge-to="entra" data-edge-label="OAuth token request" data-edge-key="6" data-edge-id="client-entra" data-composition-points="485,615;410,615;410,796;335,796" d="M 485 615 L 418 615 Q 410 615 410 623 L 410 788 Q 410 796 402 796 L 335 796" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="al" data-edge-to="records" data-edge-label="Native item lookup" data-edge-key="7" data-edge-id="al-records" data-composition-points="485,912;461,912;461,939;359,939;359,923;335,923" d="M 485 912 L 469 912 Q 461 912 461 920 L 461 931 Q 461 939 453 939 L 367 939 Q 359 939 359 931 L 359 931 Q 359 923 351 923 L 335 923" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rest" data-edge-to="records" data-edge-label="REST reads / writes" data-edge-key="8" data-edge-id="rest-records" data-composition-points="485,796;410,796;410,923;335,923" d="M 485 796 L 418 796 Q 410 796 410 804 L 410 915 Q 410 923 402 923 L 335 923" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="al" data-edge-to="records" data-edge-label="Native item lookup" data-edge-key="7" data-edge-id="al-records" data-composition-points="485,1162;461,1162;461,1183;359,1183;359,1167;335,1167" d="M 485 1162 L 469 1162 Q 461 1162 461 1170 L 461 1175 Q 461 1183 453 1183 L 367 1183 Q 359 1183 359 1175 L 359 1175 Q 359 1167 351 1167 L 335 1167" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="rest" data-edge-to="records" data-edge-label="REST reads / writes" data-edge-key="8" data-edge-id="rest-records" data-composition-points="485,924;410,924;410,1167;335,1167" d="M 485 924 L 418 924 Q 410 924 410 932 L 410 1159 Q 410 1167 402 1167 L 335 1167" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="verifyroute" data-edge-to="routing" data-edge-label="VERIFY" data-edge-key="9" data-edge-id="verifyroute-routing" data-composition-points="335,492;410,492;410,434;485,434" d="M 335 492 L 402 492 Q 410 492 410 484 L 410 442 Q 410 434 418 434 L 485 434" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="client" data-edge-to="odata" data-edge-label="OData request" data-edge-key="10" data-edge-id="client-odata" data-composition-points="775,608;825,608;825,1052;775,1052" d="M 775 608 L 817 608 Q 825 608 825 616 L 825 1044 Q 825 1052 817 1052 L 775 1052" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="odata" data-edge-to="al" data-edge-label="SearchItems" data-edge-key="11" data-edge-id="odata-al" data-composition-points="630,1076;630,1138" d="M 630 1076 L 630 1138" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
         <!-- Components -->
         <g id="node-person" data-node-id="person" data-node-label="Salesperson → browser" tabindex="0" role="button" aria-label="Focus Salesperson → browser, CLIENT" aria-pressed="false" data-node-kind="frontend" data-node-context="CLIENT">
@@ -385,38 +390,16 @@ rect.c-bg-rect { fill: var(--bg); }
         <text x="630" y="118" class="t-muted" font-size="9" text-anchor="middle">AssemblyAI Voice Agent</text>
         </g>
 
-        <g id="node-briefingtool" data-node-id="briefingtool" data-node-label="get_customer_briefing" tabindex="0" role="button" aria-label="Focus get_customer_briefing, ASSEMBLYAI" aria-pressed="false" data-node-kind="external" data-node-context="ASSEMBLYAI">
-          <title>get_customer_briefing · ASSEMBLYAI</title>
-          <rect x="485" y="138" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="138" width="290" height="48" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(491 144) scale(0.6875)">
+        <g id="node-briefingtool" data-node-id="briefingtool" data-node-label="get_customer_briefing" tabindex="0" role="button" aria-label="Focus get_customer_briefing, search_items · prepare_sales_quote, ASSEMBLYAI" aria-pressed="false" data-node-kind="external" data-node-sublabel="search_items · prepare_sales_quote" data-node-context="ASSEMBLYAI">
+          <title>get_customer_briefing · search_items · prepare_sales_quote · ASSEMBLYAI</title>
+          <rect x="485" y="174" width="290" height="128" rx="6" class="c-mask"/>
+          <rect x="485" y="174" width="290" height="128" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(491 180) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" x="630" y="166" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">get_customer_briefing</text>
-        </g>
-
-        <g id="node-searchtool" data-node-id="searchtool" data-node-label="search_items" tabindex="0" role="button" aria-label="Focus search_items, ASSEMBLYAI" aria-pressed="false" data-node-kind="external" data-node-context="ASSEMBLYAI">
-          <title>search_items · ASSEMBLYAI</title>
-          <rect x="485" y="196" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="196" width="290" height="48" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(491 202) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
-          </g>
-          <text data-node-label="" x="630" y="224" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">search_items</text>
-        </g>
-
-        <g id="node-preparetool" data-node-id="preparetool" data-node-label="prepare_sales_quote" tabindex="0" role="button" aria-label="Focus prepare_sales_quote, Read-only; no write tool, ASSEMBLYAI" aria-pressed="false" data-node-kind="external" data-node-sublabel="Read-only; no write tool" data-node-context="ASSEMBLYAI">
-          <title>prepare_sales_quote · Read-only; no write tool · ASSEMBLYAI</title>
-          <rect x="485" y="254" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="254" width="290" height="48" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(491 260) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
-          </g>
-          <text data-node-label="" x="630" y="276" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">prepare_sales_quote</text>
-        <text x="630" y="292" class="t-muted" font-size="9" text-anchor="middle">Read-only; no write tool</text>
+          <text data-node-label="" x="630" y="236" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">get_customer_briefing</text>
+        <text x="630" y="252" class="t-muted" font-size="9" text-anchor="middle">search_items · prepare_sales_quote</text>
         </g>
 
         <g id="node-voicetoken" data-node-id="voicetoken" data-node-label="/api/voice-token" tabindex="0" role="button" aria-label="Focus /api/voice-token, NEXT.JS / VERCEL · SERVER ROUTES" aria-pressed="false" data-node-kind="backend" data-node-context="NEXT.JS / VERCEL · SERVER ROUTES">
@@ -499,8 +482,8 @@ rect.c-bg-rect { fill: var(--bg); }
           <text data-node-label="" x="630" y="612" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">BusinessCentralClient</text>
         </g>
 
-        <g id="node-entra" data-node-id="entra" data-node-label="Entra ID token issuer" tabindex="0" role="button" aria-label="Focus Entra ID token issuer, OAuth client credentials, MICROSOFT" aria-pressed="false" data-node-kind="security" data-node-sublabel="OAuth client credentials" data-node-context="MICROSOFT">
-          <title>Entra ID token issuer · OAuth client credentials · MICROSOFT</title>
+        <g id="node-entra" data-node-id="entra" data-node-label="Entra ID token issuer" tabindex="0" role="button" aria-label="Focus Entra ID token issuer, OAuth client credentials, MICROSOFT ENTRA ID" aria-pressed="false" data-node-kind="security" data-node-sublabel="OAuth client credentials" data-node-context="MICROSOFT ENTRA ID">
+          <title>Entra ID token issuer · OAuth client credentials · MICROSOFT ENTRA ID</title>
           <rect x="45" y="772" width="290" height="48" rx="6" class="c-mask"/>
           <rect x="45" y="772" width="290" height="48" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(51 778) scale(0.6875)">
@@ -511,50 +494,47 @@ rect.c-bg-rect { fill: var(--bg); }
         <text x="190" y="810" class="t-muted" font-size="9" text-anchor="middle">OAuth client credentials</text>
         </g>
 
-        <g id="node-records" data-node-id="records" data-node-label="Sandbox: customers, contacts, items" tabindex="0" role="button" aria-label="Focus Sandbox: customers, contacts, items, Orders · quotes · invoices / receivables, MICROSOFT" aria-pressed="false" data-node-kind="database" data-node-sublabel="Orders · quotes · invoices / receivables" data-node-context="MICROSOFT">
-          <title>Sandbox: customers, contacts, items · Orders · quotes · invoices / receivables · MICROSOFT</title>
-          <rect x="45" y="894" width="290" height="58" rx="6" class="c-mask"/>
-          <rect x="45" y="894" width="290" height="58" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(51 900) scale(0.6875)">
+        <g id="node-records" data-node-id="records" data-node-label="Business Central item records" tabindex="0" role="button" aria-label="Focus Business Central item records, Also: customers · orders · quotes · invoices, BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="database" data-node-sublabel="Also: customers · orders · quotes · invoices" data-node-context="BUSINESS CENTRAL · SANDBOX">
+          <title>Business Central item records · Also: customers · orders · quotes · invoices · BUSINESS CENTRAL · SANDBOX</title>
+          <rect x="45" y="1138" width="290" height="58" rx="6" class="c-mask"/>
+          <rect x="45" y="1138" width="290" height="58" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(51 1144) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" x="190" y="921" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sandbox: customers, contacts, items</text>
-        <text x="190" y="937" class="t-muted" font-size="9" text-anchor="middle">Orders · quotes · invoices / receivables</text>
+          <text data-node-label="" x="190" y="1165" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central item records</text>
+        <text x="190" y="1181" class="t-muted" font-size="9" text-anchor="middle">Also: customers · orders · quotes · invoices</text>
         </g>
 
-        <g id="node-rest" data-node-id="rest" data-node-label="Business Central REST APIs" tabindex="0" role="button" aria-label="Focus Business Central REST APIs, MICROSOFT" aria-pressed="false" data-node-kind="database" data-node-context="MICROSOFT">
-          <title>Business Central REST APIs · MICROSOFT</title>
-          <rect x="485" y="772" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="772" width="290" height="48" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(491 778) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+        <g id="node-rest" data-node-id="rest" data-node-label="Business Central REST APIs" tabindex="0" role="button" aria-label="Focus Business Central REST APIs, BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="backend" data-node-context="BUSINESS CENTRAL · SANDBOX">
+          <title>Business Central REST APIs · BUSINESS CENTRAL · SANDBOX</title>
+          <rect x="485" y="900" width="290" height="48" rx="6" class="c-mask"/>
+          <rect x="485" y="900" width="290" height="48" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(491 906) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="630" y="800" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central REST APIs</text>
+          <text data-node-label="" x="630" y="928" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central REST APIs</text>
         </g>
 
-        <g id="node-odata" data-node-id="odata" data-node-label="Business Central OData" tabindex="0" role="button" aria-label="Focus Business Central OData, MICROSOFT" aria-pressed="false" data-node-kind="database" data-node-context="MICROSOFT">
-          <title>Business Central OData · MICROSOFT</title>
-          <rect x="485" y="830" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="830" width="290" height="48" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(491 836) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+        <g id="node-odata" data-node-id="odata" data-node-label="Business Central OData" tabindex="0" role="button" aria-label="Focus Business Central OData, BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="backend" data-node-context="BUSINESS CENTRAL · SANDBOX">
+          <title>Business Central OData · BUSINESS CENTRAL · SANDBOX</title>
+          <rect x="485" y="1028" width="290" height="48" rx="6" class="c-mask"/>
+          <rect x="485" y="1028" width="290" height="48" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(491 1034) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="630" y="858" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central OData</text>
+          <text data-node-label="" x="630" y="1056" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Business Central OData</text>
         </g>
 
-        <g id="node-al" data-node-id="al" data-node-label="AL Item Search codeunit" tabindex="0" role="button" aria-label="Focus AL Item Search codeunit, Codeunit 50100 · SearchItems, MICROSOFT" aria-pressed="false" data-node-kind="database" data-node-sublabel="Codeunit 50100 · SearchItems" data-node-context="MICROSOFT">
-          <title>AL Item Search codeunit · Codeunit 50100 · SearchItems · MICROSOFT</title>
-          <rect x="485" y="888" width="290" height="48" rx="6" class="c-mask"/>
-          <rect x="485" y="888" width="290" height="48" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(491 894) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+        <g id="node-al" data-node-id="al" data-node-label="AL Item Search codeunit" tabindex="0" role="button" aria-label="Focus AL Item Search codeunit, Codeunit 50100 · SearchItems, BUSINESS CENTRAL · SANDBOX" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Codeunit 50100 · SearchItems" data-node-context="BUSINESS CENTRAL · SANDBOX">
+          <title>AL Item Search codeunit · Codeunit 50100 · SearchItems · BUSINESS CENTRAL · SANDBOX</title>
+          <rect x="485" y="1138" width="290" height="48" rx="6" class="c-mask"/>
+          <rect x="485" y="1138" width="290" height="48" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(491 1144) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="630" y="910" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AL Item Search codeunit</text>
-        <text x="630" y="926" class="t-muted" font-size="9" text-anchor="middle">Codeunit 50100 · SearchItems</text>
+          <text data-node-label="" x="630" y="1160" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AL Item Search codeunit</text>
+        <text x="630" y="1176" class="t-muted" font-size="9" text-anchor="middle">Codeunit 50100 · SearchItems</text>
         </g>
 
         <!-- Connection labels -->
@@ -566,9 +546,9 @@ rect.c-bg-rect { fill: var(--bg); }
           <rect x="134.6" y="320" width="110.8" height="14" rx="3" class="c-mask"/>
           <text x="190" y="330" class="t-muted" font-size="8" text-anchor="middle">HTTPS / session token</text>
         </g>
-        <g data-edge-from="preparetool" data-edge-to="routing" data-edge-label="HTTP tools / TOOL" data-edge-key="2" data-edge-id="preparetool-routing">
-          <rect x="584.2" y="342" width="91.6" height="14" rx="3" class="c-mask"/>
-          <text x="630" y="352" class="t-muted" font-size="8" text-anchor="middle">HTTP tools / TOOL</text>
+        <g data-edge-from="briefingtool" data-edge-to="routing" data-edge-label="All three HTTP tools / TOOL" data-edge-key="2" data-edge-id="all-tools-routing">
+          <rect x="560.2" y="342" width="139.6" height="14" rx="3" class="c-mask"/>
+          <text x="630" y="352" class="t-muted" font-size="8" text-anchor="middle">All three HTTP tools / TOOL</text>
         </g>
         <g data-edge-from="prepareroute" data-edge-to="signed" data-edge-label="VERIFY / signed preview" data-edge-key="3" data-edge-id="prepareroute-signed">
           <rect x="349.8" y="530" width="120.39999999999999" height="14" rx="3" class="c-mask"/>
@@ -578,21 +558,33 @@ rect.c-bg-rect { fill: var(--bg); }
           <rect x="345" y="581" width="130" height="14" rx="3" class="c-mask"/>
           <text x="410" y="591" class="t-security" font-size="8" text-anchor="middle">EXECUTE / confirmed write</text>
         </g>
-        <g data-edge-from="client" data-edge-to="rest" data-edge-label="Direct ERP calls" data-edge-key="5" data-edge-id="client-rest">
-          <rect x="586.6" y="697" width="86.8" height="14" rx="3" class="c-mask"/>
-          <text x="630" y="707" class="t-muted" font-size="8" text-anchor="middle">Direct ERP calls</text>
+        <g data-edge-from="client" data-edge-to="rest" data-edge-label="REST requests" data-edge-key="5" data-edge-id="client-rest">
+          <rect x="593.8" y="720" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="630" y="730" class="t-muted" font-size="8" text-anchor="middle">REST requests</text>
         </g>
         <g data-edge-from="client" data-edge-to="entra" data-edge-label="OAuth token request" data-edge-key="6" data-edge-id="client-entra">
           <rect x="359.4" y="685.5" width="101.2" height="14" rx="3" class="c-mask"/>
           <text x="410" y="695.5" class="t-security" font-size="8" text-anchor="middle">OAuth token request</text>
         </g>
         <g data-edge-from="al" data-edge-to="records" data-edge-label="Native item lookup" data-edge-key="7" data-edge-id="al-records">
-          <rect x="361.8" y="957" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="410" y="967" class="t-muted" font-size="8" text-anchor="middle">Native item lookup</text>
+          <rect x="361.8" y="1208" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="410" y="1218" class="t-muted" font-size="8" text-anchor="middle">Native item lookup</text>
         </g>
         <g data-edge-from="rest" data-edge-to="records" data-edge-label="REST reads / writes" data-edge-key="8" data-edge-id="rest-records">
-          <rect x="359.4" y="839.5" width="101.2" height="14" rx="3" class="c-mask"/>
-          <text x="410" y="849.5" class="t-muted" font-size="8" text-anchor="middle">REST reads / writes</text>
+          <rect x="359.4" y="1025.5" width="101.2" height="14" rx="3" class="c-mask"/>
+          <text x="410" y="1035.5" class="t-muted" font-size="8" text-anchor="middle">REST reads / writes</text>
+        </g>
+        <g data-edge-from="verifyroute" data-edge-to="routing" data-edge-label="VERIFY" data-edge-key="9" data-edge-id="verifyroute-routing">
+          <rect x="390.6" y="443" width="38.8" height="14" rx="3" class="c-mask"/>
+          <text x="410" y="453" class="t-muted" font-size="8" text-anchor="middle">VERIFY</text>
+        </g>
+        <g data-edge-from="client" data-edge-to="odata" data-edge-label="OData request" data-edge-key="10" data-edge-id="client-odata">
+          <rect x="788.8" y="977" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="825" y="987" class="t-muted" font-size="8" text-anchor="middle">OData request</text>
+        </g>
+        <g data-edge-from="odata" data-edge-to="al" data-edge-label="SearchItems" data-edge-key="11" data-edge-id="odata-al">
+          <rect x="598.6" y="1098" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="630" y="1108" class="t-muted" font-size="8" text-anchor="middle">SearchItems</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
@@ -616,9 +608,14 @@ rect.c-bg-rect { fill: var(--bg); }
           <text data-boundary-label="" x="475" y="403" class="t-cloud" font-size="9" font-weight="600">CLOUDFLARE WORKER</text>
         </g>
 
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="4" data-composition-frame-kind="region" data-composition-frame-label="MICROSOFT">
-          <rect data-graph-role="structural-frame-label-mask" x="31" y="752" width="58.6" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="35" y="765" class="t-cloud" font-size="9" font-weight="600">MICROSOFT</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="4" data-composition-frame-kind="region" data-composition-frame-label="BUSINESS CENTRAL · SANDBOX">
+          <rect data-graph-role="structural-frame-label-mask" x="31" y="880" width="150.4" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="35" y="893" class="t-cloud" font-size="9" font-weight="600">BUSINESS CENTRAL · SANDBOX</text>
+        </g>
+
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="5" data-composition-frame-kind="region" data-composition-frame-label="MICROSOFT ENTRA ID">
+          <rect data-graph-role="structural-frame-label-mask" x="31" y="752" width="107.2" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="35" y="765" class="t-cloud" font-size="9" font-weight="600">MICROSOFT ENTRA ID</text>
         </g>
 
         <!-- Legend -->

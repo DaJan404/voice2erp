@@ -65,12 +65,12 @@
         290,
         58
       ],
-      "sublabel": "search_items · prepare_sales_quote"
+      "sublabel": "search_items \u00b7 prepare_sales_quote"
     },
     {
       "id": "review",
       "type": "security",
-      "label": "Quote preview → human review",
+      "label": "Quote preview \u2192 human review",
       "pos": [
         445,
         245
@@ -111,7 +111,7 @@
     {
       "id": "worker",
       "type": "backend",
-      "label": "HTTP routing · token validation",
+      "label": "HTTP routing \u00b7 token validation",
       "pos": [
         45,
         437
@@ -124,7 +124,7 @@
     {
       "id": "services",
       "type": "backend",
-      "label": "BriefingService · QuoteService",
+      "label": "BriefingService \u00b7 QuoteService",
       "pos": [
         45,
         495
@@ -176,8 +176,8 @@
     },
     {
       "id": "rest",
-      "type": "database",
-      "label": "REST API · authoritative records",
+      "type": "backend",
+      "label": "Business Central write / REST API",
       "pos": [
         45,
         790
@@ -186,12 +186,12 @@
         290,
         48
       ],
-      "sublabel": "Customers · contacts · items"
+      "sublabel": "Worker initiates the confirmed mutation"
     },
     {
       "id": "records",
       "type": "database",
-      "label": "Orders · quotes · invoices",
+      "label": "Orders \u00b7 quotes \u00b7 invoices",
       "pos": [
         45,
         848
@@ -218,7 +218,7 @@
     {
       "id": "write",
       "type": "security",
-      "label": "Write → re-read quote + lines",
+      "label": "Worker re-read + verification",
       "pos": [
         445,
         790
@@ -227,7 +227,7 @@
         290,
         58
       ],
-      "sublabel": "QuoteService checks returned facts"
+      "sublabel": "QuoteService checks quote + lines"
     },
     {
       "id": "result",
@@ -310,7 +310,7 @@
       "from": "client",
       "to": "rest",
       "variant": "default",
-      "label": "Direct REST + OData",
+      "label": "Worker writes via REST",
       "labelAt": [
         190,
         725
@@ -321,14 +321,14 @@
       "from": "rest",
       "to": "write",
       "variant": "security",
-      "label": "After confirmation"
+      "label": "BC response"
     },
     {
       "id": "write-result",
       "from": "write",
       "to": "result",
       "variant": "security",
-      "label": "Application verifies",
+      "label": "Verified UI / speech",
       "labelAt": [
         590,
         878
@@ -338,7 +338,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "ASSEMBLYAI · READS AND PREPARATION",
+      "label": "ASSEMBLYAI \u00b7 READS AND PREPARATION",
       "wraps": [
         "voice",
         "tools"
@@ -367,7 +367,7 @@
     },
     {
       "kind": "region",
-      "label": "DYNAMICS 365 BUSINESS CENTRAL · SANDBOX",
+      "label": "DYNAMICS 365 BUSINESS CENTRAL \u00b7 SANDBOX",
       "wraps": [
         "rest",
         "records",

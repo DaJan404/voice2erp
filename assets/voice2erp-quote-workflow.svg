@@ -1,4 +1,4 @@
-<svg viewBox="0 0 820 1242" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" style="" width="820" height="1242" xmlns="http://www.w3.org/2000/svg"><style>@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+<svg viewBox="0 0 820 1278" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" style="" width="820" height="1278" xmlns="http://www.w3.org/2000/svg"><style>@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 600; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
@@ -318,15 +318,15 @@ rect.c-bg-rect { fill: var(--bg); }
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="3" x="48" y="799" width="724" height="120" rx="10" class="c-lane" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="4" x="48" y="957" width="724" height="192" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="4" x="48" y="957" width="724" height="228" rx="10" class="c-lane" stroke-width="1"/>
 
         <!-- Lifelines -->
-        <path d="M 108 142 L 108 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 233.2 142 L 233.2 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 358.4 142 L 358.4 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 483.6 142 L 483.6 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 608.8 142 L 608.8 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 734 142 L 734 1177" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 108 142 L 108 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 233.2 142 L 233.2 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 358.4 142 L 358.4 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 483.6 142 L 483.6 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 608.8 142 L 608.8 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 734 142 L 734 1213" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
 
         <!-- Activations -->
 
@@ -505,6 +505,14 @@ rect.c-bg-rect { fill: var(--bg); }
         <g>
           <rect x="203.99999999999994" y="1111" width="183.6" height="16" rx="3" class="c-mask"/>
           <text x="295.79999999999995" y="1121" class="t-backend" font-size="9" text-anchor="middle">reply.create if session connected</text>
+        </g>
+        </g>
+
+        <g data-edge-from="voice" data-edge-to="human" data-edge-label="Spoken verified result" data-edge-key="22" data-edge-id="step-22">
+          <path data-composition-edge-from="voice" data-composition-edge-to="human" data-composition-edge-id="step-22" data-composition-points="351.4,1167;115,1167" d="M 351.4 1167 L 115 1167" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g>
+          <rect x="170" y="1147" width="126.4" height="16" rx="3" class="c-mask"/>
+          <text x="233.2" y="1157" class="t-muted" font-size="9" text-anchor="middle">Spoken verified result</text>
         </g>
         </g>
 
