@@ -2,150 +2,422 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "VOICE2ERP \u00b7 Current runtime",
-    "quality_profile": "showcase",
+    "title": "VOICE2ERP · Current runtime internals",
     "locale": "en",
+    "quality_profile": "showcase",
     "viewBox": [
-      1250,
-      650
-    ]
+      820,
+      1020
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
   },
   "components": [
     {
-      "id": "browser",
+      "id": "person",
       "type": "frontend",
-      "label": "Salesperson / Browser",
-      "sublabel": "Voice, evidence, human confirmation",
+      "label": "Salesperson → browser",
       "pos": [
-        39,
-        260
+        45,
+        80
       ],
       "size": [
-        210,
-        78
+        290,
+        48
       ]
     },
     {
-      "id": "voice",
+      "id": "audio",
+      "type": "frontend",
+      "label": "Audio / session handling",
+      "pos": [
+        45,
+        138
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Microphone · WSS · playback"
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "Transcript / evidence UI",
+      "pos": [
+        45,
+        196
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Quote preview + confirmation UI"
+    },
+    {
+      "id": "session",
       "type": "external",
-      "label": "AssemblyAI Voice Agent",
-      "sublabel": "Read-only ERP tools",
+      "label": "Realtime voice session",
       "pos": [
-        312,
-        100
+        485,
+        80
       ],
       "size": [
-        210,
-        78
+        290,
+        48
+      ],
+      "sublabel": "AssemblyAI Voice Agent"
+    },
+    {
+      "id": "briefingtool",
+      "type": "external",
+      "label": "get_customer_briefing",
+      "pos": [
+        485,
+        138
+      ],
+      "size": [
+        290,
+        48
       ]
     },
     {
-      "id": "vercel",
-      "type": "backend",
-      "label": "Next.js / Vercel",
-      "sublabel": "Session token and server proxies",
+      "id": "searchtool",
+      "type": "external",
+      "label": "search_items",
       "pos": [
-        312,
-        430
+        485,
+        196
       ],
       "size": [
-        210,
-        78
+        290,
+        48
       ]
     },
     {
-      "id": "worker",
-      "type": "backend",
-      "label": "Cloudflare Python Worker",
-      "sublabel": "Validate \u00b7 resolve \u00b7 execute \u00b7 verify",
+      "id": "preparetool",
+      "type": "external",
+      "label": "prepare_sales_quote",
       "pos": [
-        616,
-        260
+        485,
+        254
       ],
       "size": [
-        210,
-        78
+        290,
+        48
+      ],
+      "sublabel": "Read-only; no write tool"
+    },
+    {
+      "id": "voicetoken",
+      "type": "backend",
+      "label": "/api/voice-token",
+      "pos": [
+        45,
+        410
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "verifyroute",
+      "type": "backend",
+      "label": "/api/verify/customer",
+      "pos": [
+        45,
+        468
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "prepareroute",
+      "type": "backend",
+      "label": "/api/quotes/prepare",
+      "pos": [
+        45,
+        526
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "createroute",
+      "type": "backend",
+      "label": "/api/quotes/create",
+      "pos": [
+        45,
+        584
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "routing",
+      "type": "backend",
+      "label": "HTTP routing + token validation",
+      "pos": [
+        485,
+        410
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "briefing",
+      "type": "backend",
+      "label": "BriefingService · QuoteService",
+      "pos": [
+        485,
+        468
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "signed",
+      "type": "backend",
+      "label": "Signed-confirmation handling",
+      "pos": [
+        485,
+        526
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "BusinessCentralClient",
+      "pos": [
+        485,
+        584
+      ],
+      "size": [
+        290,
+        48
       ]
     },
     {
       "id": "entra",
       "type": "security",
-      "label": "Microsoft Entra ID",
-      "sublabel": "OAuth client-credentials token issuer",
+      "label": "Entra ID token issuer",
       "pos": [
-        616,
-        70
+        45,
+        772
       ],
       "size": [
-        210,
-        78
+        290,
+        48
+      ],
+      "sublabel": "OAuth client credentials"
+    },
+    {
+      "id": "records",
+      "type": "database",
+      "label": "Sandbox: customers, contacts, items",
+      "pos": [
+        45,
+        894
+      ],
+      "size": [
+        290,
+        58
+      ],
+      "sublabel": "Orders · quotes · invoices / receivables"
+    },
+    {
+      "id": "rest",
+      "type": "database",
+      "label": "Business Central REST APIs",
+      "pos": [
+        485,
+        772
+      ],
+      "size": [
+        290,
+        48
       ]
     },
     {
-      "id": "bc",
+      "id": "odata",
       "type": "database",
-      "label": "Business Central sandbox",
-      "sublabel": "REST APIs + native AL OData resolver",
+      "label": "Business Central OData",
       "pos": [
-        928,
-        260
+        485,
+        830
       ],
       "size": [
-        210,
-        78
+        290,
+        48
       ]
+    },
+    {
+      "id": "al",
+      "type": "database",
+      "label": "AL Item Search codeunit",
+      "pos": [
+        485,
+        888
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Codeunit 50100 · SearchItems"
     }
   ],
   "connections": [
     {
-      "id": "browser-voice",
-      "from": "browser",
-      "to": "voice",
-      "label": "Audio / events (WSS)",
-      "variant": "default"
-    },
-    {
-      "id": "browser-vercel",
-      "from": "browser",
-      "to": "vercel",
-      "label": "HTTPS / human confirmation",
-      "variant": "security"
-    },
-    {
-      "id": "voice-worker",
-      "from": "voice",
-      "to": "worker",
-      "label": "HTTP tools / TOOL token",
-      "variant": "default"
-    },
-    {
-      "id": "vercel-worker",
-      "from": "vercel",
-      "to": "worker",
-      "label": "Prepare / VERIFY; create / EXECUTE",
-      "variant": "security"
-    },
-    {
-      "id": "worker-entra",
-      "from": "worker",
-      "to": "entra",
-      "label": "OAuth token request",
-      "variant": "security"
-    },
-    {
-      "id": "worker-bc",
-      "from": "worker",
-      "to": "bc",
-      "label": "REST + OData / bearer token",
+      "id": "audio-session",
+      "from": "audio",
+      "to": "session",
       "variant": "default",
-      "labelDy": 63
+      "label": "WSS"
     },
     {
-      "id": "vercel-voice",
-      "from": "vercel",
-      "to": "voice",
-      "label": "Mint session token",
-      "variant": "security"
+      "id": "ui-voicetoken",
+      "from": "ui",
+      "to": "voicetoken",
+      "variant": "default",
+      "label": "HTTPS / session token",
+      "labelAt": [
+        190,
+        330
+      ]
+    },
+    {
+      "id": "preparetool-routing",
+      "from": "preparetool",
+      "to": "routing",
+      "variant": "default",
+      "label": "HTTP tools / TOOL",
+      "labelAt": [
+        630,
+        352
+      ]
+    },
+    {
+      "id": "prepareroute-signed",
+      "from": "prepareroute",
+      "to": "signed",
+      "variant": "security",
+      "label": "VERIFY / signed preview"
+    },
+    {
+      "id": "createroute-client",
+      "from": "createroute",
+      "to": "client",
+      "variant": "security",
+      "label": "EXECUTE / confirmed write"
+    },
+    {
+      "id": "client-rest",
+      "from": "client",
+      "to": "rest",
+      "variant": "default",
+      "label": "Direct ERP calls",
+      "labelAt": [
+        630,
+        707
+      ]
+    },
+    {
+      "id": "client-entra",
+      "from": "client",
+      "to": "entra",
+      "variant": "security",
+      "label": "OAuth token request"
+    },
+    {
+      "id": "al-records",
+      "from": "al",
+      "to": "records",
+      "variant": "default",
+      "label": "Native item lookup",
+      "labelAt": [
+        410,
+        967
+      ]
+    },
+    {
+      "id": "rest-records",
+      "from": "rest",
+      "to": "records",
+      "variant": "default",
+      "label": "REST reads / writes"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "CLIENT",
+      "wraps": [
+        "person",
+        "audio",
+        "ui"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "ASSEMBLYAI",
+      "wraps": [
+        "session",
+        "briefingtool",
+        "searchtool",
+        "preparetool"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "NEXT.JS / VERCEL · SERVER ROUTES",
+      "wraps": [
+        "voicetoken",
+        "verifyroute",
+        "prepareroute",
+        "createroute"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "CLOUDFLARE WORKER",
+      "wraps": [
+        "routing",
+        "briefing",
+        "signed",
+        "client"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "MICROSOFT",
+      "wraps": [
+        "entra",
+        "records",
+        "rest",
+        "odata",
+        "al"
+      ],
+      "pad": 18
     }
   ]
 }

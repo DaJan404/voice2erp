@@ -2,7 +2,19 @@
 
 [Documentation index](README.md)
 
-![Current runtime](../assets/voice2erp-runtime.svg)
+## System overview
+
+![System overview with human confirmation boundary](../assets/voice2erp-system-overview.svg)
+
+**LLM understands intent · Business Central resolves entities · Human authorizes mutation · Application verifies the result**
+
+The upper branches separate voice-driven reads from human authorization. The lower-right write/re-read/result path summarizes the confirmed quote outcome; the Worker performs those operations against Business Central. Boxes inside service boundaries list responsibilities, not additional deployed services.
+
+## Runtime internals
+
+![Current runtime groups and internal responsibilities](../assets/voice2erp-runtime.svg)
+
+The grouped runtime map expands browser responsibilities, all four Next.js routes, the three voice tools, Worker services, and Microsoft interfaces. Arrows show selected cross-boundary paths; they are not a complete call graph. Entra only issues a token; BusinessCentralClient calls the ERP directly.
 
 All components in this diagram are implemented. Deployment settings and the existing public demo identify Vercel, Cloudflare, AssemblyAI, and the Business Central sandbox as the intended runtime; this document is not a live service-health attestation.
 

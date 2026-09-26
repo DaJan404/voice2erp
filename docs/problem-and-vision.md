@@ -6,6 +6,10 @@ A field salesperson moves between customers while ERP work remains tied to scree
 
 VOICE2ERP explores whether conversation can prepare that work while preserving deliberate control over ERP writes. The current prototype connects voice to a dedicated Microsoft Dynamics 365 Business Central sandbox.
 
+![Field-sales comparison](../assets/voice2erp-field-sales-flow.svg)
+
+This is an illustrative workflow comparison, not a measured productivity result. The right-hand path prepares work between visits and preserves the explicit review step before a write.
+
 ## A day between visits
 
 After leaving Customer A, the salesperson asks, “Brief me on Customer B.” VOICE2ERP retrieves live customer, sales, and receivables information. The salesperson enters the next meeting with source-backed context. After the meeting, “Prepare a quote for two whiteboards” starts entity resolution and read-only preparation. The proposal waits in the web interface. When safely stopped or otherwise able to review it, the salesperson confirms; the application creates and re-reads the quote.

@@ -14,14 +14,17 @@ Salespeople move between meetings; ERP systems are organized around screens, for
 
 VOICE2ERP connects that transition time to a controlled ERP workflow:
 
-```text
-Customer A → travel / transition → “Brief me on Customer B.”
-           → live ERP context → Customer B meeting
-           → “Prepare a quote for two whiteboards.”
-           → preview → human confirmation → ERP write → re-read and verify
-```
+![Field-sales workflow with and without VOICE2ERP](assets/voice2erp-field-sales-flow.svg)
 
 Voice interaction is hands-free only where safe and legal. Review the screen and confirm writes when safely stopped, parked, or otherwise appropriate. The project does not propose screen interaction while actively driving.
+
+## From voice to a verified ERP action
+
+Voice retrieves customer context and prepares a proposal. The human reviews the resolved records and authorizes the write; the application then re-reads Business Central before returning a verified result.
+
+![VOICE2ERP system overview: voice and human-authorized execution](assets/voice2erp-system-overview.svg)
+
+**LLM understands intent · Business Central resolves entities · Human authorizes mutation · Application verifies the result**
 
 ## Try it yourself
 

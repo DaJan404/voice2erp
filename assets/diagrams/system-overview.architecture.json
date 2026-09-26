@@ -1,0 +1,379 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Talk. Confirm. Execute. Verify.",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [
+      780,
+      1020
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "components": [
+    {
+      "id": "person",
+      "type": "external",
+      "label": "Salesperson",
+      "pos": [
+        275,
+        30
+      ],
+      "size": [
+        230,
+        44
+      ]
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser / VOICE2ERP web UI",
+      "pos": [
+        255,
+        112
+      ],
+      "size": [
+        270,
+        52
+      ]
+    },
+    {
+      "id": "voice",
+      "type": "external",
+      "label": "Realtime Voice Agent",
+      "pos": [
+        45,
+        245
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "tools",
+      "type": "external",
+      "label": "get_customer_briefing",
+      "pos": [
+        45,
+        303
+      ],
+      "size": [
+        290,
+        58
+      ],
+      "sublabel": "search_items · prepare_sales_quote"
+    },
+    {
+      "id": "review",
+      "type": "security",
+      "label": "Quote preview → human review",
+      "pos": [
+        445,
+        245
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "confirm",
+      "type": "security",
+      "label": "Confirm & create",
+      "pos": [
+        445,
+        303
+      ],
+      "size": [
+        290,
+        58
+      ],
+      "sublabel": "When safely stopped / appropriate"
+    },
+    {
+      "id": "vercel",
+      "type": "backend",
+      "label": "Next.js / Vercel server",
+      "pos": [
+        445,
+        437
+      ],
+      "size": [
+        290,
+        58
+      ],
+      "sublabel": "EXECUTE-authorized request"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "HTTP routing · token validation",
+      "pos": [
+        45,
+        437
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "services",
+      "type": "backend",
+      "label": "BriefingService · QuoteService",
+      "pos": [
+        45,
+        495
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "confirmation",
+      "type": "backend",
+      "label": "Signed-confirmation verification",
+      "pos": [
+        45,
+        553
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "BusinessCentralClient",
+      "pos": [
+        45,
+        611
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "entra",
+      "type": "security",
+      "label": "Microsoft Entra ID",
+      "pos": [
+        445,
+        611
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Token issuer; no ERP proxy"
+    },
+    {
+      "id": "rest",
+      "type": "database",
+      "label": "REST API · authoritative records",
+      "pos": [
+        45,
+        790
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Customers · contacts · items"
+    },
+    {
+      "id": "records",
+      "type": "database",
+      "label": "Orders · quotes · invoices",
+      "pos": [
+        45,
+        848
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Receivables from invoice evidence"
+    },
+    {
+      "id": "al",
+      "type": "database",
+      "label": "AL/OData Item Search resolver",
+      "pos": [
+        45,
+        906
+      ],
+      "size": [
+        290,
+        48
+      ]
+    },
+    {
+      "id": "write",
+      "type": "security",
+      "label": "Write → re-read quote + lines",
+      "pos": [
+        445,
+        790
+      ],
+      "size": [
+        290,
+        58
+      ],
+      "sublabel": "QuoteService checks returned facts"
+    },
+    {
+      "id": "result",
+      "type": "frontend",
+      "label": "Verified result",
+      "pos": [
+        445,
+        906
+      ],
+      "size": [
+        290,
+        48
+      ],
+      "sublabel": "Visible result; speech if connected"
+    }
+  ],
+  "connections": [
+    {
+      "id": "person-browser",
+      "from": "person",
+      "to": "browser",
+      "variant": "default"
+    },
+    {
+      "id": "browser-voice",
+      "from": "browser",
+      "to": "voice",
+      "variant": "default",
+      "label": "Voice / WSS",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "browser-review",
+      "from": "browser",
+      "to": "review",
+      "variant": "default",
+      "label": "Separate web preparation",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "tools-worker",
+      "from": "tools",
+      "to": "worker",
+      "variant": "default",
+      "label": "Read-only HTTP tools",
+      "labelAt": [
+        190,
+        392
+      ]
+    },
+    {
+      "id": "confirm-vercel",
+      "from": "confirm",
+      "to": "vercel",
+      "variant": "security",
+      "label": "Human authorizes mutation",
+      "labelAt": [
+        590,
+        392
+      ]
+    },
+    {
+      "id": "vercel-worker",
+      "from": "vercel",
+      "to": "worker",
+      "variant": "security",
+      "label": "EXECUTE"
+    },
+    {
+      "id": "client-entra",
+      "from": "client",
+      "to": "entra",
+      "variant": "security",
+      "label": "OAuth"
+    },
+    {
+      "id": "client-rest",
+      "from": "client",
+      "to": "rest",
+      "variant": "default",
+      "label": "Direct REST + OData",
+      "labelAt": [
+        190,
+        725
+      ]
+    },
+    {
+      "id": "rest-write",
+      "from": "rest",
+      "to": "write",
+      "variant": "security",
+      "label": "After confirmation"
+    },
+    {
+      "id": "write-result",
+      "from": "write",
+      "to": "result",
+      "variant": "security",
+      "label": "Application verifies",
+      "labelAt": [
+        590,
+        878
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ASSEMBLYAI · READS AND PREPARATION",
+      "wraps": [
+        "voice",
+        "tools"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "HUMAN CONFIRMATION BOUNDARY",
+      "wraps": [
+        "review",
+        "confirm"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "CLOUDFLARE PYTHON WORKER",
+      "wraps": [
+        "worker",
+        "services",
+        "confirmation",
+        "client"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "DYNAMICS 365 BUSINESS CENTRAL · SANDBOX",
+      "wraps": [
+        "rest",
+        "records",
+        "al"
+      ],
+      "pad": 18
+    }
+  ]
+}
