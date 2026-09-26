@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VOICE2ERP \u00b7 Current runtime",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [
+      1250,
+      650
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Salesperson / Browser",
+      "sublabel": "Voice, evidence, human confirmation",
+      "pos": [
+        39,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "voice",
+      "type": "external",
+      "label": "AssemblyAI Voice Agent",
+      "sublabel": "Read-only ERP tools",
+      "pos": [
+        312,
+        100
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "vercel",
+      "type": "backend",
+      "label": "Next.js / Vercel",
+      "sublabel": "Session token and server proxies",
+      "pos": [
+        312,
+        430
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Cloudflare Python Worker",
+      "sublabel": "Validate \u00b7 resolve \u00b7 execute \u00b7 verify",
+      "pos": [
+        616,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "entra",
+      "type": "security",
+      "label": "Microsoft Entra ID",
+      "sublabel": "OAuth client-credentials token issuer",
+      "pos": [
+        616,
+        70
+      ],
+      "size": [
+        210,
+        78
+      ]
+    },
+    {
+      "id": "bc",
+      "type": "database",
+      "label": "Business Central sandbox",
+      "sublabel": "REST APIs + native AL OData resolver",
+      "pos": [
+        928,
+        260
+      ],
+      "size": [
+        210,
+        78
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-voice",
+      "from": "browser",
+      "to": "voice",
+      "label": "Audio / events (WSS)",
+      "variant": "default"
+    },
+    {
+      "id": "browser-vercel",
+      "from": "browser",
+      "to": "vercel",
+      "label": "HTTPS / human confirmation",
+      "variant": "security"
+    },
+    {
+      "id": "voice-worker",
+      "from": "voice",
+      "to": "worker",
+      "label": "HTTP tools / TOOL token",
+      "variant": "default"
+    },
+    {
+      "id": "vercel-worker",
+      "from": "vercel",
+      "to": "worker",
+      "label": "Prepare / VERIFY; create / EXECUTE",
+      "variant": "security"
+    },
+    {
+      "id": "worker-entra",
+      "from": "worker",
+      "to": "entra",
+      "label": "OAuth token request",
+      "variant": "security"
+    },
+    {
+      "id": "worker-bc",
+      "from": "worker",
+      "to": "bc",
+      "label": "REST + OData / bearer token",
+      "variant": "default",
+      "labelDy": 63
+    },
+    {
+      "id": "vercel-voice",
+      "from": "vercel",
+      "to": "voice",
+      "label": "Mint session token",
+      "variant": "security"
+    }
+  ]
+}

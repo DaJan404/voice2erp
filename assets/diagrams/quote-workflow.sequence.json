@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "VOICE2ERP \u00b7 Quote preparation and execution",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "column_fit": "spread",
+    "viewBox": [
+      1400,
+      780
+    ]
+  },
+  "participants": [
+    {
+      "id": "human",
+      "type": "external",
+      "label": "Human"
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser"
+    },
+    {
+      "id": "voice",
+      "type": "external",
+      "label": "AssemblyAI"
+    },
+    {
+      "id": "vercel",
+      "type": "backend",
+      "label": "Vercel"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker"
+    },
+    {
+      "id": "bc",
+      "type": "database",
+      "label": "Business Central"
+    }
+  ],
+  "messages": [
+    {
+      "id": "step-0",
+      "from": "human",
+      "to": "voice",
+      "y": 160,
+      "label": "Request quote by voice",
+      "variant": "default"
+    },
+    {
+      "id": "step-1",
+      "from": "voice",
+      "to": "worker",
+      "y": 188,
+      "label": "search_items",
+      "variant": "default"
+    },
+    {
+      "id": "step-2",
+      "from": "worker",
+      "to": "bc",
+      "y": 216,
+      "label": "AL OData search / candidates",
+      "variant": "default"
+    },
+    {
+      "id": "step-3",
+      "from": "worker",
+      "to": "voice",
+      "y": 244,
+      "label": "Resolved item or ask user to choose",
+      "variant": "default"
+    },
+    {
+      "id": "step-4",
+      "from": "voice",
+      "to": "worker",
+      "y": 272,
+      "label": "prepare_sales_quote (read-only)",
+      "variant": "default"
+    },
+    {
+      "id": "step-5",
+      "from": "worker",
+      "to": "bc",
+      "y": 300,
+      "label": "Read customer + item",
+      "variant": "default"
+    },
+    {
+      "id": "step-6",
+      "from": "worker",
+      "to": "voice",
+      "y": 328,
+      "label": "Read-only preview; no confirmation token",
+      "variant": "default"
+    },
+    {
+      "id": "step-7",
+      "from": "voice",
+      "to": "browser",
+      "y": 356,
+      "label": "tool.call event / preparation arguments",
+      "variant": "default"
+    },
+    {
+      "id": "step-8",
+      "from": "browser",
+      "to": "vercel",
+      "y": 384,
+      "label": "POST /api/quotes/prepare",
+      "variant": "default"
+    },
+    {
+      "id": "step-9",
+      "from": "vercel",
+      "to": "worker",
+      "y": 412,
+      "label": "GET prepare / VERIFY token",
+      "variant": "default"
+    },
+    {
+      "id": "step-10",
+      "from": "worker",
+      "to": "bc",
+      "y": 440,
+      "label": "Re-resolve customer + item (read-only)",
+      "variant": "default"
+    },
+    {
+      "id": "step-11",
+      "from": "worker",
+      "to": "browser",
+      "y": 468,
+      "label": "Via Vercel: preview + signed token (10 min)",
+      "variant": "default"
+    },
+    {
+      "id": "step-12",
+      "from": "human",
+      "to": "browser",
+      "y": 496,
+      "label": "Review / Confirm & create",
+      "variant": "security"
+    },
+    {
+      "id": "step-13",
+      "from": "browser",
+      "to": "vercel",
+      "y": 524,
+      "label": "POST create / signed token + request ID",
+      "variant": "security"
+    },
+    {
+      "id": "step-14",
+      "from": "vercel",
+      "to": "worker",
+      "y": 552,
+      "label": "POST create / EXECUTE token",
+      "variant": "security"
+    },
+    {
+      "id": "step-15",
+      "from": "worker",
+      "to": "bc",
+      "y": 580,
+      "label": "Revalidate / marker lookup / create header + line",
+      "variant": "default"
+    },
+    {
+      "id": "step-16",
+      "from": "worker",
+      "to": "bc",
+      "y": 608,
+      "label": "GET quote + lines / verify identity and quantity",
+      "variant": "default"
+    },
+    {
+      "id": "step-17",
+      "from": "worker",
+      "to": "browser",
+      "y": 636,
+      "label": "Via Vercel: verified result",
+      "variant": "default"
+    },
+    {
+      "id": "step-18",
+      "from": "browser",
+      "to": "voice",
+      "y": 664,
+      "label": "reply.create / verified facts",
+      "variant": "default"
+    },
+    {
+      "id": "step-19",
+      "from": "voice",
+      "to": "human",
+      "y": 692,
+      "label": "Spoken result if session connected",
+      "variant": "default"
+    }
+  ]
+}
