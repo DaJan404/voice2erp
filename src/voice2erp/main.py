@@ -67,6 +67,9 @@ class Default(WorkerEntrypoint):
         if url.path == "/api/customers/briefing":
             return await self.get_customer_briefing(request, url)
 
+        if url.path == "/api/items/search":
+            return await self.search_items(request, url)
+
         if url.path == "/api/verify/customer":
             return await self.verify_customer(request, url)
 
@@ -102,7 +105,11 @@ class Default(WorkerEntrypoint):
     ) -> Response:
         expected_token = cast(
             str | None,
-            getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
+            getattr(
+                self.env,
+                "VOICE2ERP_TOOL_TOKEN",
+                None,
+            ),
         )
 
         provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
@@ -140,7 +147,7 @@ class Default(WorkerEntrypoint):
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Business Central request failed",
+                    "detail": ("Business Central request failed"),
                 },
                 status=502,
             )
@@ -154,7 +161,11 @@ class Default(WorkerEntrypoint):
     ) -> Response:
         expected_token = cast(
             str | None,
-            getattr(self.env, "VOICE2ERP_VERIFY_TOKEN", None),
+            getattr(
+                self.env,
+                "VOICE2ERP_VERIFY_TOKEN",
+                None,
+            ),
         )
 
         provided_token = request.headers.get("X-VOICE2ERP-VERIFY-TOKEN")
@@ -183,6 +194,7 @@ class Default(WorkerEntrypoint):
         try:
             client = self._business_central_client()
             service = BriefingService(client)
+
             result = await service.get_customer_briefing(query)
 
         except BusinessCentralError as exc:
@@ -191,17 +203,19 @@ class Default(WorkerEntrypoint):
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Business Central verification failed",
+                    "detail": ("Business Central verification failed"),
                 },
                 status=502,
             )
 
         verification: VerificationMetadata = {
             "source": "business_central",
-            "source_name": "Microsoft Dynamics 365 Business Central",
+            "source_name": ("Microsoft Dynamics 365 Business Central"),
             "environment": self._require_env("BC_ENVIRONMENT"),
             "company_id": self._require_env("BC_COMPANY_ID"),
-            "retrieved_at": datetime.now(UTC).isoformat().replace(
+            "retrieved_at": datetime.now(UTC)
+            .isoformat()
+            .replace(
                 "+00:00",
                 "Z",
             ),
@@ -223,7 +237,10 @@ class Default(WorkerEntrypoint):
                     "status": "ambiguous",
                     "verification": verification,
                     "query": query,
-                    "customers": result.get("customers", []),
+                    "customers": result.get(
+                        "customers",
+                        [],
+                    ),
                 }
             )
 
@@ -235,6 +252,72 @@ class Default(WorkerEntrypoint):
             },
             status=404,
         )
+
+    async def search_items(
+        self,
+        request: RequestLike,
+        url: ParseResult,
+    ) -> Response:
+        if request.method != "GET":
+            return json_response(
+                {"detail": "Method Not Allowed"},
+                status=405,
+            )
+
+        expected_token = cast(
+            str | None,
+            getattr(
+                self.env,
+                "VOICE2ERP_TOOL_TOKEN",
+                None,
+            ),
+        )
+
+        provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
+
+        auth_error = validate_tool_token(
+            expected_token,
+            provided_token,
+        )
+
+        if auth_error is not None:
+            detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
+
+            return json_response(
+                {"detail": detail},
+                status=auth_error,
+            )
+
+        params: dict[str, list[str]] = parse_qs(url.query)
+
+        query = params.get(
+            "query",
+            [""],
+        )[0].strip()
+
+        if not query:
+            return json_response(
+                {"detail": "Missing item query"},
+                status=400,
+            )
+
+        try:
+            client = self._business_central_client()
+
+            result = await client.search_items_native(query)
+
+        except BusinessCentralError as exc:
+            print(f"Business Central item search error: {exc}")
+
+            return json_response(
+                {
+                    "status": "error",
+                    "detail": ("Business Central item search failed"),
+                },
+                status=502,
+            )
+
+        return json_response(result)
 
     async def prepare_sales_quote(
         self,
@@ -252,14 +335,25 @@ class Default(WorkerEntrypoint):
         if verification_request:
             expected_token = cast(
                 str | None,
-                getattr(self.env, "VOICE2ERP_VERIFY_TOKEN", None),
+                getattr(
+                    self.env,
+                    "VOICE2ERP_VERIFY_TOKEN",
+                    None,
+                ),
             )
+
             provided_token = request.headers.get("X-VOICE2ERP-VERIFY-TOKEN")
+
         else:
             expected_token = cast(
                 str | None,
-                getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
+                getattr(
+                    self.env,
+                    "VOICE2ERP_TOOL_TOKEN",
+                    None,
+                ),
             )
+
             provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
 
         auth_error = validate_tool_token(
@@ -269,28 +363,38 @@ class Default(WorkerEntrypoint):
 
         if auth_error is not None:
             detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
+
             return json_response(
                 {"detail": detail},
                 status=auth_error,
             )
 
         params: dict[str, list[str]] = parse_qs(url.query)
-        customer_query = params.get("customer_query", [""])[0].strip()
-        item_query = params.get("item_query", [""])[0].strip()
-        quantity_value = params.get("quantity", [""])[0].strip()
+
+        customer_query = params.get(
+            "customer_query",
+            [""],
+        )[0].strip()
+
+        item_query = params.get(
+            "item_query",
+            [""],
+        )[0].strip()
+
+        quantity_value = params.get(
+            "quantity",
+            [""],
+        )[0].strip()
 
         if not customer_query or not item_query or not quantity_value:
             return json_response(
-                {
-                    "detail": (
-                        "customer_query, item_query and quantity are required"
-                    )
-                },
+                {"detail": ("customer_query, item_query and quantity are required")},
                 status=400,
             )
 
         try:
             quantity = float(quantity_value)
+
         except ValueError:
             return json_response(
                 {"detail": "Quantity must be numeric"},
@@ -300,17 +404,20 @@ class Default(WorkerEntrypoint):
         try:
             client = self._business_central_client()
             service = QuoteService(client)
+
             result = await service.prepare_sales_quote(
                 customer_query=customer_query,
                 item_query=item_query,
                 quantity=quantity,
             )
+
         except BusinessCentralError as exc:
             print(f"Business Central quote preparation error: {exc}")
+
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Business Central quote preparation failed",
+                    "detail": ("Business Central quote preparation failed"),
                 },
                 status=502,
             )
@@ -320,27 +427,54 @@ class Default(WorkerEntrypoint):
 
         execute_secret = cast(
             str | None,
-            getattr(self.env, "VOICE2ERP_EXECUTE_TOKEN", None),
+            getattr(
+                self.env,
+                "VOICE2ERP_EXECUTE_TOKEN",
+                None,
+            ),
         )
 
         if not isinstance(execute_secret, str) or not execute_secret.strip():
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Quote confirmation service is unavailable",
+                    "detail": ("Quote confirmation service is unavailable"),
                 },
                 status=503,
             )
 
-        preview = cast(dict[str, object], result["preview"])
-        customer = cast(dict[str, object], preview["customer"])
-        item = cast(dict[str, object], preview["item"])
+        preview = cast(
+            dict[str, object],
+            result["preview"],
+        )
+
+        customer = cast(
+            dict[str, object],
+            preview["customer"],
+        )
+
+        item = cast(
+            dict[str, object],
+            preview["item"],
+        )
+
         expires_at = int(time.time()) + 600
 
         confirmation_token = create_confirmation_token(
-            customer_number=cast(str, customer["number"]),
-            item_number=cast(str, item["number"]),
-            quantity=float(cast(float, preview["quantity"])),
+            customer_number=cast(
+                str,
+                customer["number"],
+            ),
+            item_number=cast(
+                str,
+                item["number"],
+            ),
+            quantity=float(
+                cast(
+                    float,
+                    preview["quantity"],
+                )
+            ),
             expires_at=expires_at,
             secret=execute_secret,
         )
@@ -365,8 +499,13 @@ class Default(WorkerEntrypoint):
 
         expected_token = cast(
             str | None,
-            getattr(self.env, "VOICE2ERP_EXECUTE_TOKEN", None),
+            getattr(
+                self.env,
+                "VOICE2ERP_EXECUTE_TOKEN",
+                None,
+            ),
         )
+
         provided_token = request.headers.get("X-VOICE2ERP-EXECUTE-TOKEN")
 
         auth_error = validate_tool_token(
@@ -376,6 +515,7 @@ class Default(WorkerEntrypoint):
 
         if auth_error is not None:
             detail = "Service unavailable" if auth_error == 503 else "Unauthorized"
+
             return json_response(
                 {"detail": detail},
                 status=auth_error,
@@ -384,29 +524,48 @@ class Default(WorkerEntrypoint):
         request_body = await request.text()
 
         try:
-            body = json.loads(request_body)
+            decoded_body: object = json.loads(request_body)
+
         except json.JSONDecodeError:
             return json_response(
                 {"detail": "Invalid JSON body"},
                 status=400,
             )
 
-        if not isinstance(body, dict):
+        if not isinstance(decoded_body, dict):
             return json_response(
                 {"detail": "Invalid JSON body"},
                 status=400,
             )
 
+        body = cast(
+            dict[str, object],
+            decoded_body,
+        )
+
         confirmation_token = body.get("confirmation_token")
+
         request_id = body.get("request_id")
 
-        if not isinstance(confirmation_token, str) or not confirmation_token:
+        if (
+            not isinstance(
+                confirmation_token,
+                str,
+            )
+            or not confirmation_token
+        ):
             return json_response(
-                {"detail": "Missing confirmation token"},
+                {"detail": ("Missing confirmation token")},
                 status=400,
             )
 
-        if not isinstance(request_id, str) or not request_id:
+        if (
+            not isinstance(
+                request_id,
+                str,
+            )
+            or not request_id
+        ):
             return json_response(
                 {"detail": "Missing request id"},
                 status=400,
@@ -415,16 +574,22 @@ class Default(WorkerEntrypoint):
         try:
             confirmed = verify_confirmation_token(
                 confirmation_token,
-                secret=cast(str, expected_token),
+                secret=cast(
+                    str,
+                    expected_token,
+                ),
             )
+
             client = self._business_central_client()
             service = QuoteService(client)
+
             result = await service.execute_sales_quote(
                 customer_number=confirmed["customer_number"],
                 item_number=confirmed["item_number"],
                 quantity=confirmed["quantity"],
                 request_id=request_id,
             )
+
         except QuoteConfirmationError as exc:
             return json_response(
                 {
@@ -433,6 +598,7 @@ class Default(WorkerEntrypoint):
                 },
                 status=400,
             )
+
         except QuoteExecutionError as exc:
             return json_response(
                 {
@@ -441,22 +607,26 @@ class Default(WorkerEntrypoint):
                 },
                 status=409,
             )
+
         except BusinessCentralError as exc:
             print(f"Business Central quote execution error: {exc}")
+
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Business Central quote creation failed",
+                    "detail": ("Business Central quote creation failed"),
                 },
                 status=502,
             )
 
         verification: VerificationMetadata = {
             "source": "business_central",
-            "source_name": "Microsoft Dynamics 365 Business Central",
+            "source_name": ("Microsoft Dynamics 365 Business Central"),
             "environment": self._require_env("BC_ENVIRONMENT"),
             "company_id": self._require_env("BC_COMPANY_ID"),
-            "retrieved_at": datetime.now(UTC).isoformat().replace(
+            "retrieved_at": datetime.now(UTC)
+            .isoformat()
+            .replace(
                 "+00:00",
                 "Z",
             ),
@@ -468,7 +638,7 @@ class Default(WorkerEntrypoint):
                 **result,
                 "verification": verification,
             },
-            status=201 if result["status"] == "created" else 200,
+            status=(201 if result["status"] == "created" else 200),
         )
 
     async def get_bc_customer_debug(
@@ -478,7 +648,11 @@ class Default(WorkerEntrypoint):
     ) -> Response:
         expected_token = cast(
             str | None,
-            getattr(self.env, "VOICE2ERP_TOOL_TOKEN", None),
+            getattr(
+                self.env,
+                "VOICE2ERP_TOOL_TOKEN",
+                None,
+            ),
         )
 
         provided_token = request.headers.get("X-VOICE2ERP-TOKEN")
@@ -498,6 +672,7 @@ class Default(WorkerEntrypoint):
 
         try:
             client = self._business_central_client()
+
             customer = await client.get_customer(customer_number)
 
         except BusinessCentralError as exc:
@@ -506,7 +681,7 @@ class Default(WorkerEntrypoint):
             return json_response(
                 {
                     "status": "error",
-                    "detail": "Business Central request failed",
+                    "detail": ("Business Central request failed"),
                 },
                 status=502,
             )
@@ -529,14 +704,27 @@ class Default(WorkerEntrypoint):
         )
 
     @staticmethod
-    def _customer_query(url: ParseResult) -> str:
+    def _customer_query(
+        url: ParseResult,
+    ) -> str:
         params: dict[str, list[str]] = parse_qs(url.query)
-        return params.get("query", [""])[0].strip()
 
-    def _require_env(self, name: str) -> str:
+        return params.get(
+            "query",
+            [""],
+        )[0].strip()
+
+    def _require_env(
+        self,
+        name: str,
+    ) -> str:
         value = cast(
             str | None,
-            getattr(self.env, name, None),
+            getattr(
+                self.env,
+                name,
+                None,
+            ),
         )
 
         if not isinstance(value, str) or not value.strip():

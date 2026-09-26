@@ -2,7 +2,7 @@ import json
 import time
 from dataclasses import dataclass
 from http import HTTPMethod
-from typing import Protocol, cast
+from typing import Protocol, TypedDict, cast
 from urllib.parse import urlencode
 
 from workers import fetch
@@ -18,10 +18,6 @@ from voice2erp.business_central.models import (
     SalesQuote,
     SalesQuoteLine,
 )
-from voice2erp.business_central.search import (
-    item_matches_query,
-    primary_search_term,
-)
 
 
 class FetchResponseLike(Protocol):
@@ -29,6 +25,23 @@ class FetchResponseLike(Protocol):
     status: int
 
     async def text(self) -> str: ...
+
+
+class ItemSearchCandidate(TypedDict):
+    number: str
+    description: str
+    description2: str
+    unitPrice: float
+    uom: str
+    blocked: bool
+
+
+class ItemSearchResult(TypedDict):
+    status: str
+    query: str
+    matchedQuery: str
+    count: int
+    items: list[ItemSearchCandidate]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +67,15 @@ class BusinessCentralClient:
             f"{self.config.environment}/"
             "api/v2.0/"
             f"companies({self.config.company_id})"
+        )
+
+    @property
+    def odata_base_url(self) -> str:
+        return (
+            "https://api.businesscentral.dynamics.com/v2.0/"
+            f"{self.config.tenant_id}/"
+            f"{self.config.environment}/"
+            "ODataV4"
         )
 
     async def _get_access_token(self) -> str:
@@ -182,6 +204,51 @@ class BusinessCentralClient:
 
         return cast(dict[str, object], payload)
 
+    async def _post_odata_action(
+        self,
+        action: str,
+        body: dict[str, object],
+    ) -> dict[str, object]:
+        token = await self._get_access_token()
+
+        query_string = urlencode(
+            {
+                "company": self.config.company_id,
+            }
+        )
+
+        url = f"{self.odata_base_url}/{action}?{query_string}"
+
+        response = cast(
+            FetchResponseLike,
+            await fetch(
+                url,
+                method=HTTPMethod.POST,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body=json.dumps(body),
+            ),
+        )
+
+        response_text = await response.text()
+
+        if not response.ok:
+            raise BusinessCentralError(
+                f"Business Central OData action returned HTTP {response.status}: {response_text}"
+            )
+
+        payload = json.loads(response_text)
+
+        if not isinstance(payload, dict):
+            raise BusinessCentralError(
+                "Business Central returned an unexpected OData action response"
+            )
+
+        return cast(dict[str, object], payload)
+
     async def _delete(
         self,
         path: str,
@@ -204,6 +271,7 @@ class BusinessCentralClient:
             return
 
         response_text = await response.text()
+
         raise BusinessCentralError(
             f"Business Central returned HTTP {response.status}: {response_text}"
         )
@@ -291,7 +359,7 @@ class BusinessCentralClient:
         payload = await self._get(
             "contacts",
             {
-                "$filter": f"contains(tolower(displayName),'{primary_term}')",
+                "$filter": (f"contains(tolower(displayName),'{primary_term}')"),
                 "$schemaversion": "2.1",
                 "$top": "100",
             },
@@ -303,9 +371,7 @@ class BusinessCentralClient:
             return []
 
         contacts = [
-            contact
-            for contact in cast(list[Contact], values)
-            if contact.get("type") == "Person"
+            contact for contact in cast(list[Contact], values) if contact.get("type") == "Person"
         ]
 
         exact_matches = [
@@ -321,7 +387,8 @@ class BusinessCentralClient:
             contact
             for contact in contacts
             if all(
-                term in " ".join(
+                term
+                in " ".join(
                     (
                         contact.get("displayName", ""),
                         contact.get("email", ""),
@@ -352,48 +419,138 @@ class BusinessCentralClient:
 
         return cast(Item, values[0])
 
+    async def search_items_native(
+        self,
+        query: str,
+    ) -> ItemSearchResult:
+        normalized_query = " ".join(query.split())
+
+        if not normalized_query:
+            return {
+                "status": "invalid_query",
+                "query": "",
+                "matchedQuery": "",
+                "count": 0,
+                "items": [],
+            }
+
+        payload = await self._post_odata_action(
+            "VOICE2ERP_Search_SearchItems",
+            {
+                "searchText": normalized_query,
+            },
+        )
+
+        value = payload.get("value")
+
+        if not isinstance(value, str):
+            raise BusinessCentralError("Business Central item search did not return a value")
+
+        try:
+            decoded: object = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise BusinessCentralError(
+                "Business Central item search returned invalid JSON"
+            ) from exc
+
+        if not isinstance(decoded, dict):
+            raise BusinessCentralError("Business Central item search returned an unexpected result")
+
+        search_result = cast(dict[str, object], decoded)
+
+        status = search_result.get("status")
+        original_query = search_result.get("query")
+        matched_query = search_result.get("matchedQuery")
+        count = search_result.get("count")
+        raw_items = search_result.get("items")
+
+        if not isinstance(status, str):
+            raise BusinessCentralError("Business Central item search returned an invalid status")
+
+        if not isinstance(original_query, str):
+            raise BusinessCentralError("Business Central item search returned an invalid query")
+
+        if not isinstance(matched_query, str):
+            raise BusinessCentralError(
+                "Business Central item search returned an invalid matchedQuery"
+            )
+
+        if not isinstance(count, int):
+            raise BusinessCentralError("Business Central item search returned an invalid count")
+
+        if not isinstance(raw_items, list):
+            raise BusinessCentralError("Business Central item search returned invalid items")
+
+        items: list[ItemSearchCandidate] = []
+
+        for raw_item_object in cast(list[object], raw_items):
+            if not isinstance(raw_item_object, dict):
+                continue
+
+            raw_item = cast(dict[str, object], raw_item_object)
+
+            number = raw_item.get("number")
+            description = raw_item.get("description")
+            description2 = raw_item.get("description2")
+            unit_price = raw_item.get("unitPrice")
+            uom = raw_item.get("uom")
+            blocked = raw_item.get("blocked")
+
+            if not isinstance(number, str):
+                continue
+
+            if not isinstance(description, str):
+                continue
+
+            if not isinstance(description2, str):
+                continue
+
+            if isinstance(unit_price, bool) or not isinstance(
+                unit_price,
+                (int, float),
+            ):
+                continue
+
+            if not isinstance(uom, str):
+                continue
+
+            if not isinstance(blocked, bool):
+                continue
+
+            items.append(
+                {
+                    "number": number,
+                    "description": description,
+                    "description2": description2,
+                    "unitPrice": float(unit_price),
+                    "uom": uom,
+                    "blocked": blocked,
+                }
+            )
+
+        return {
+            "status": status,
+            "query": original_query,
+            "matchedQuery": matched_query,
+            "count": count,
+            "items": items,
+        }
+
     async def search_items(
         self,
         query: str,
     ) -> list[Item]:
-        normalized_query = " ".join(query.split())
+        search_result = await self.search_items_native(query)
 
-        if not normalized_query:
-            return []
+        items: list[Item] = []
 
-        exact_item = await self.get_item(normalized_query)
+        for candidate in search_result["items"]:
+            item = await self.get_item(candidate["number"])
 
-        if exact_item is not None:
-            return [exact_item]
+            if item is not None:
+                items.append(item)
 
-        primary_term = primary_search_term(normalized_query)
-
-        if not primary_term:
-            return []
-
-        safe_query = self._odata_string(primary_term)
-
-        payload = await self._get(
-            "items",
-            {
-                "$filter": f"contains(tolower(displayName),'{safe_query}')",
-                "$schemaversion": "2.1",
-                "$top": "100",
-            },
-        )
-
-        values = payload.get("value")
-
-        if not isinstance(values, list):
-            return []
-
-        items = cast(list[Item], values)
-
-        return [
-            item
-            for item in items
-            if item_matches_query(item, normalized_query)
-        ]
+        return items
 
     async def get_sales_orders(
         self,
@@ -474,6 +631,7 @@ class BusinessCentralClient:
         quote_id: str,
     ) -> SalesQuote:
         payload = await self._get(f"salesQuotes({quote_id})")
+
         return cast(SalesQuote, payload)
 
     async def get_sales_quote_by_external_document_number(
@@ -485,22 +643,29 @@ class BusinessCentralClient:
         payload = await self._get(
             "salesQuotes",
             {
-                "$filter": f"externalDocumentNumber eq '{safe_number}'",
+                "$filter": (f"externalDocumentNumber eq '{safe_number}'"),
                 "$top": "2",
             },
         )
 
-        values = payload.get("value")
+        raw_values = payload.get("value")
 
-        if not isinstance(values, list) or not values:
+        if not isinstance(raw_values, list) or not raw_values:
             return None
+
+        values = cast(list[object], raw_values)
 
         if len(values) > 1:
             raise BusinessCentralError(
                 "Multiple sales quotes matched the same external document number"
             )
 
-        return cast(SalesQuote, values[0])
+        first_value = values[0]
+
+        if not isinstance(first_value, dict):
+            raise BusinessCentralError("Business Central returned an invalid sales quote")
+
+        return cast(SalesQuote, first_value)
 
     async def get_sales_quote_lines(
         self,
@@ -556,4 +721,3 @@ class BusinessCentralClient:
         quote_id: str,
     ) -> None:
         await self._delete(f"salesQuotes({quote_id})")
-

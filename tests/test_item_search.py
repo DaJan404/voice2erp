@@ -4,7 +4,6 @@ from voice2erp.business_central.search import (
     search_term_variants,
 )
 
-
 ITEM = {
     "id": "item-1",
     "number": "1996-S",
