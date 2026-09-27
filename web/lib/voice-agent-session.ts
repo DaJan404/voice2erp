@@ -305,9 +305,119 @@ export class VoiceAgentSession {
         );
       }
 
-      const tokenResponse = await fetch("/api/voice-token", {
+      // Start microphone acquisition immediately, but do not let a slow
+      // virtual device block the AssemblyAI connection and greeting.
+      const microphonePromise = navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+
+      const tokenPromise = fetch("/api/voice-token", {
         cache: "no-store",
       });
+
+      this.captureContext = new AudioContext({
+        sampleRate: WIRE_RATE,
+      });
+      this.playbackContext = new AudioContext({
+        sampleRate: WIRE_RATE,
+      });
+
+      const captureContext = this.captureContext;
+      const playbackContext = this.playbackContext;
+
+      const playbackSetupPromise = (async () => {
+        await playbackContext.resume();
+
+        const playback = await addWorklet(
+          playbackContext,
+          PLAYBACK_WORKLET,
+          "voice2erp-playback",
+        );
+
+        if (
+          this.manuallyStopped ||
+          this.playbackContext !== playbackContext
+        ) {
+          playback.disconnect();
+          return;
+        }
+
+        this.playback = playback;
+        playback.connect(playbackContext.destination);
+      })();
+
+      const captureSetupPromise = (async () => {
+        await captureContext.resume();
+
+        return addWorklet(
+          captureContext,
+          CAPTURE_WORKLET,
+          "voice2erp-capture",
+        );
+      })();
+
+      // Microphone setup continues independently. Audio is sent as soon as
+      // both the input device and the AssemblyAI session are ready.
+      void Promise.all([microphonePromise, captureSetupPromise])
+        .then(([microphone, capture]) => {
+          if (
+            this.manuallyStopped ||
+            this.captureContext !== captureContext
+          ) {
+            microphone
+              .getTracks()
+              .forEach((track) => track.stop());
+            return;
+          }
+
+          this.microphone = microphone;
+
+          captureContext
+            .createMediaStreamSource(microphone)
+            .connect(capture);
+
+          capture.port.onmessage = ({
+            data,
+          }: MessageEvent<ArrayBuffer>) => {
+            const socket = this.socket;
+
+            if (
+              !this.ready ||
+              !socket ||
+              socket.readyState !== WebSocket.OPEN
+            ) {
+              return;
+            }
+
+            socket.send(
+              JSON.stringify({
+                type: "input.audio",
+                audio: encodeBase64(data),
+              }),
+            );
+          };
+        })
+        .catch((error) => {
+          if (this.manuallyStopped) {
+            return;
+          }
+
+          this.fail(
+            error instanceof Error
+              ? error.message
+              : "Could not prepare microphone audio.",
+          );
+        });
+
+      const [tokenResponse] = await Promise.all([
+        tokenPromise,
+        playbackSetupPromise,
+      ]);
       const tokenData: unknown = await tokenResponse.json();
 
       if (this.manuallyStopped) {
@@ -318,49 +428,6 @@ export class VoiceAgentSession {
         throw new Error("Could not create a voice session.");
       }
 
-      this.captureContext = new AudioContext({
-        sampleRate: WIRE_RATE,
-      });
-      this.playbackContext = new AudioContext({
-        sampleRate: WIRE_RATE,
-      });
-
-      await Promise.all([
-        this.captureContext.resume(),
-        this.playbackContext.resume(),
-      ]);
-
-      this.playback = await addWorklet(
-        this.playbackContext,
-        PLAYBACK_WORKLET,
-        "voice2erp-playback",
-      );
-      this.playback.connect(this.playbackContext.destination);
-
-      this.microphone = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
-
-      if (this.manuallyStopped) {
-        this.cleanupMedia();
-        return;
-      }
-
-      const capture = await addWorklet(
-        this.captureContext,
-        CAPTURE_WORKLET,
-        "voice2erp-capture",
-      );
-
-      this.captureContext
-        .createMediaStreamSource(this.microphone)
-        .connect(capture);
-
       const websocketUrl = new URL(
         "wss://agents.assemblyai.com/v1/ws",
       );
@@ -368,22 +435,6 @@ export class VoiceAgentSession {
 
       const socket = new WebSocket(websocketUrl);
       this.socket = socket;
-
-      capture.port.onmessage = ({ data }: MessageEvent<ArrayBuffer>) => {
-        if (
-          !this.ready ||
-          socket.readyState !== WebSocket.OPEN
-        ) {
-          return;
-        }
-
-        socket.send(
-          JSON.stringify({
-            type: "input.audio",
-            audio: encodeBase64(data),
-          }),
-        );
-      };
 
       socket.onopen = () => {
         socket.send(
